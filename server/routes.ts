@@ -1,29 +1,17 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupSimpleAuth, isSimpleAuthenticated } from "./simpleAuth";
 import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // Simple Auth setup
+  setupSimpleAuth(app);
 
   // Society routes
-  app.get("/api/societies", isAuthenticated, async (req: any, res) => {
+  app.get("/api/societies", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
@@ -35,9 +23,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/societies", isAuthenticated, async (req: any, res) => {
+  app.post("/api/societies", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
@@ -51,9 +39,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/societies/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/societies/:id", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       const society = await storage.getSociety(req.params.id);
       
       if (!society) {
@@ -76,9 +64,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Residents routes
-  app.get("/api/societies/:societyId/residents", isAuthenticated, async (req: any, res) => {
+  app.get("/api/societies/:societyId/residents", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       const societyId = req.params.societyId;
       
       // Check permission
@@ -98,9 +86,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Complaints routes
-  app.get("/api/complaints", isAuthenticated, async (req: any, res) => {
+  app.get("/api/complaints", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -121,9 +109,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/complaints", isAuthenticated, async (req: any, res) => {
+  app.post("/api/complaints", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user || user.role !== 'resident' || !user.societyId) {
         return res.status(403).json({ message: "Only residents can create complaints" });
       }
@@ -142,9 +130,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/complaints/:id/status", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/complaints/:id/status", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user || user.role === 'resident') {
         return res.status(403).json({ message: "Only admins can update complaint status" });
       }
@@ -159,9 +147,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Facility bookings routes
-  app.get("/api/facility-bookings", isAuthenticated, async (req: any, res) => {
+  app.get("/api/facility-bookings", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -182,9 +170,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/facility-bookings", isAuthenticated, async (req: any, res) => {
+  app.post("/api/facility-bookings", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user || user.role !== 'resident' || !user.societyId) {
         return res.status(403).json({ message: "Only residents can create bookings" });
       }
@@ -203,9 +191,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/facility-bookings/:id/status", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/facility-bookings/:id/status", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user || user.role === 'resident') {
         return res.status(403).json({ message: "Only admins can update booking status" });
       }
@@ -220,9 +208,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Announcements routes
-  app.get("/api/announcements", isAuthenticated, async (req: any, res) => {
+  app.get("/api/announcements", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user || !user.societyId) {
         return res.status(403).json({ message: "Forbidden" });
       }
@@ -235,9 +223,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/announcements", isAuthenticated, async (req: any, res) => {
+  app.post("/api/announcements", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user || user.role === 'resident' || !user.societyId) {
         return res.status(403).json({ message: "Only admins can create announcements" });
       }
@@ -257,9 +245,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard stats routes
-  app.get("/api/dashboard/stats", isAuthenticated, async (req: any, res) => {
+  app.get("/api/dashboard/stats", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -280,9 +268,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Facilities routes
-  app.get("/api/facilities", isAuthenticated, async (req: any, res) => {
+  app.get("/api/facilities", isSimpleAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = req.user;
       if (!user || !user.societyId) {
         return res.status(403).json({ message: "Forbidden" });
       }
