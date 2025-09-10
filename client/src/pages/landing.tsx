@@ -9,7 +9,7 @@ import SignupForm from "@/components/auth/signup-form";
 import { useAuth } from "@/hooks/useAuth";
 import { Building, Users, Calendar, Bell, ChartBar, Smartphone } from "lucide-react";
 import { useLocation } from "wouter";
-import societyImage from "@assets/generated_images/Modern_residential_society_complex_f1d8f2d0.png";
+import societyImage from "../assets/society-image.png";
 
 export default function Landing() {
   const { scrollY } = useScroll();
