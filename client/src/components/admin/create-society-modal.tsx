@@ -9,9 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { insertSocietySchema } from "@shared/schema";
 import { PlusCircle } from "lucide-react";
-import * as z from "zod";
 
 type CreateSocietyFormData = {
   name: string;

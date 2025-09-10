@@ -77,13 +77,13 @@ export default function AdminDashboard() {
             transition={{ duration: 0.6 }}
           >
             <div>
-              <h1 className="text-3xl font-bold text-foreground" data-testid="text-admin-dashboard">Admin Dashboard</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground" data-testid="text-admin-dashboard">Admin Dashboard</h1>
               <p className="text-muted-foreground mt-2">Manage your society efficiently</p>
             </div>
           </motion.div>
           
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             {[
               { 
                 title: "Total Residents", 
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
           </div>
           
           {/* Quick Actions & Recent Complaints */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -152,7 +152,7 @@ export default function AdminDashboard() {
                   <CardTitle>Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {quickActions.map((action, index) => (
                       <Button
                         key={index}

@@ -77,7 +77,7 @@ export default function ResidentDashboard() {
             transition={{ duration: 0.6 }}
           >
             <div>
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                 Welcome Back, <span data-testid="text-user-name">{user?.firstName || "Resident"}</span>
               </h1>
               <p className="text-muted-foreground mt-2" data-testid="text-user-flat">
@@ -87,7 +87,7 @@ export default function ResidentDashboard() {
           </motion.div>
           
           {/* Status Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             {[
               { 
                 title: "Pending Dues", 
@@ -145,7 +145,7 @@ export default function ResidentDashboard() {
           </div>
           
           {/* Quick Services & Recent Announcements */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -156,7 +156,7 @@ export default function ResidentDashboard() {
                   <CardTitle>Quick Services</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {quickServices.map((service, index) => (
                       <Button
                         key={index}
