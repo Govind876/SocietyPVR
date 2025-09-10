@@ -13,9 +13,11 @@ import { insertSocietySchema } from "@shared/schema";
 import { PlusCircle } from "lucide-react";
 import * as z from "zod";
 
-const createSocietyFormSchema = insertSocietySchema.extend({});
-
-type CreateSocietyFormData = z.infer<typeof createSocietyFormSchema>;
+type CreateSocietyFormData = {
+  name: string;
+  address: string;
+  totalFlats: number;
+};
 
 interface CreateSocietyModalProps {
   trigger?: React.ReactNode;
@@ -27,13 +29,10 @@ export function CreateSocietyModal({ trigger }: CreateSocietyModalProps) {
   const queryClient = useQueryClient();
 
   const form = useForm<CreateSocietyFormData>({
-    resolver: zodResolver(createSocietyFormSchema),
     defaultValues: {
       name: "",
       address: "",
       totalFlats: 0,
-      contactEmail: "",
-      contactPhone: "",
     },
   });
 
@@ -121,64 +120,26 @@ export function CreateSocietyModal({ trigger }: CreateSocietyModalProps) {
               )}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="totalFlats"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Total Flats *</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number"
-                        placeholder="100"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                        data-testid="input-total-flats"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="contactPhone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Phone</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="+91 9876543210"
-                        {...field}
-                        data-testid="input-contact-phone"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <FormField
               control={form.control}
-              name="contactEmail"
+              name="totalFlats"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contact Email</FormLabel>
+                  <FormLabel>Total Flats *</FormLabel>
                   <FormControl>
                     <Input 
-                      type="email"
-                      placeholder="admin@greenvalley.com"
-                      {...field}
-                      data-testid="input-contact-email"
+                      type="number"
+                      placeholder="100"
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                      data-testid="input-total-flats"
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
 
             <div className="flex gap-3 pt-4">
               <Button 

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { CreateSocietyModal } from "./create-society-modal";
-import { Building, Users, MapPin, Phone, Mail, Search, Plus } from "lucide-react";
+import { Building, Users, MapPin, Search, Plus } from "lucide-react";
 import { format } from "date-fns";
 import type { Society } from "@shared/schema";
 
@@ -129,29 +129,11 @@ export function SocietiesManagement() {
                       {society.totalFlats} flats
                     </span>
                   </div>
-                  
-                  {society.contactPhone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600" data-testid={`society-phone-${society.id}`}>
-                        {society.contactPhone}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {society.contactEmail && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600 truncate" data-testid={`society-email-${society.id}`}>
-                        {society.contactEmail}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 <div className="pt-2 border-t">
                   <p className="text-xs text-gray-500" data-testid={`society-created-${society.id}`}>
-                    Created {format(new Date(society.createdAt), "MMM dd, yyyy")}
+                    Created {society.createdAt ? format(new Date(society.createdAt), "MMM dd, yyyy") : "Unknown"}
                   </p>
                 </div>
 
