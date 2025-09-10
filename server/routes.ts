@@ -501,12 +501,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
-      // For now, we'll need to implement a getResidentsBySociety method
-      // This is a basic implementation that returns empty array
-      res.json([]);
+      const societyId = user.role === 'admin' ? user.societyId : req.query.societyId;
+      if (!societyId) {
+        return res.status(400).json({ message: "Society ID is required" });
+      }
+
+      const residents = await storage.getResidentsBySociety(societyId);
+      res.json(residents);
     } catch (error) {
       console.error("Error fetching residents:", error);
       res.status(500).json({ message: "Failed to fetch residents" });
+    }
+  });
+
+  app.patch("/api/residents/:id", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const residentId = req.params.id;
+      
+      // Only admins and super admins can update residents
+      if (user.role === 'resident') {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      // For admins, check that the resident belongs to their society
+      if (user.role === 'admin') {
+        const existingResident = await storage.getUser(residentId);
+        if (!existingResident) {
+          return res.status(404).json({ message: "Resident not found" });
+        }
+        if (existingResident.societyId !== user.societyId) {
+          return res.status(403).json({ message: "Cannot modify residents from other societies" });
+        }
+      }
+
+      // Create a restricted schema that only allows safe fields to prevent privilege escalation
+      const updateResidentSchema = insertUserSchema.pick({
+        email: true,
+        firstName: true,
+        lastName: true,
+        phoneNumber: true,
+        flatNumber: true,
+      }).partial();
+
+      const validatedData = updateResidentSchema.parse(req.body);
+      const updatedResident = await storage.updateUser(residentId, validatedData);
+      res.json(updatedResident);
+    } catch (error) {
+      console.error("Error updating resident:", error);
+      res.status(500).json({ message: "Failed to update resident" });
+    }
+  });
+
+  app.delete("/api/residents/:id", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const residentId = req.params.id;
+      
+      // Only admins and super admins can delete residents
+      if (user.role === 'resident') {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      // For admins, check that the resident belongs to their society
+      if (user.role === 'admin') {
+        const existingResident = await storage.getUser(residentId);
+        if (!existingResident) {
+          return res.status(404).json({ message: "Resident not found" });
+        }
+        if (existingResident.societyId !== user.societyId) {
+          return res.status(403).json({ message: "Cannot delete residents from other societies" });
+        }
+      }
+
+      await storage.deleteUser(residentId);
+      res.json({ message: "Resident deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting resident:", error);
+      res.status(500).json({ message: "Failed to delete resident" });
     }
   });
 

@@ -224,7 +224,8 @@ export default function AdminDashboard() {
                 icon: Users,
                 buttonText: "Manage Residents",
                 color: "from-primary to-accent",
-                testId: "button-manage-residents"
+                testId: "button-manage-residents",
+                href: "/manage-residents"
               },
               {
                 title: "Facility Booking",
@@ -259,6 +260,7 @@ export default function AdminDashboard() {
                     <p className="text-muted-foreground mb-4">{module.description}</p>
                     <Button 
                       className={`w-full bg-gradient-to-r ${module.color} text-white hover:opacity-90 transition-opacity`}
+                      onClick={() => module.href ? window.location.href = module.href : undefined}
                       data-testid={module.testId}
                     >
                       {module.buttonText}

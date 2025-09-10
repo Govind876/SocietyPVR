@@ -46,6 +46,9 @@ export interface IStorage {
   // Simple auth operations
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(userData: Omit<UpsertUser, 'id'>): Promise<User>;
+  getResidentsBySociety(societyId: string): Promise<User[]>;
+  updateUser(userId: string, userData: Partial<UpsertUser>): Promise<User>;
+  deleteUser(userId: string): Promise<void>;
   
   // Society operations
   createSociety(society: InsertSociety): Promise<Society>;
@@ -150,6 +153,27 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getResidentsBySociety(societyId: string): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(and(eq(users.societyId, societyId), eq(users.role, 'resident')))
+      .orderBy(users.firstName, users.lastName);
+  }
+
+  async updateUser(userId: string, userData: Partial<UpsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...userData, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
   // Society operations
   async createSociety(society: InsertSociety): Promise<Society> {
     const [newSociety] = await db.insert(societies).values(society).returning();
@@ -176,14 +200,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSociety(id: string): Promise<void> {
     await db.delete(societies).where(eq(societies.id, id));
-  }
-
-  // Residents management
-  async getResidentsBySociety(societyId: string): Promise<User[]> {
-    return await db
-      .select()
-      .from(users)
-      .where(and(eq(users.societyId, societyId), eq(users.role, 'resident')));
   }
 
   async assignResidentToFlat(residentId: string, flatNumber: string, societyId: string): Promise<void> {

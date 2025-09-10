@@ -10,6 +10,7 @@ import ResidentDashboard from "@/pages/resident-dashboard";
 import SuperAdminDashboard from "@/pages/super-admin-dashboard";
 import Voting from "@/pages/voting";
 import Marketplace from "@/pages/marketplace";
+import ManageResidents from "@/pages/manage-residents";
 import type { User } from "@shared/schema";
 
 function Router() {
@@ -40,6 +41,7 @@ function Router() {
           <Route path="/super-admin" component={SuperAdminDashboard} />
           <Route path="/voting" component={Voting} />
           <Route path="/marketplace" component={Marketplace} />
+          <Route path="/manage-residents" component={ManageResidents} />
         </>
       )}
     </Switch>
