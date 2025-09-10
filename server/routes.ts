@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupSimpleAuth, isSimpleAuthenticated } from "./simpleAuth";
-import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema, insertPollSchema, insertVoteSchema, insertMarketplaceItemSchema } from "@shared/schema";
+import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema, insertPollSchema, insertVoteSchema, insertMarketplaceItemSchema, insertUserSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Simple Auth setup
@@ -465,6 +465,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error updating poll status:", error);
       res.status(500).json({ message: "Failed to update poll status" });
+    }
+  });
+
+  // User/Resident routes
+  app.post("/api/residents", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      
+      // Only admins and super admins can create residents
+      if (user.role === 'resident') {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const validatedData = insertUserSchema.parse({
+        ...req.body,
+        role: 'resident',
+        societyId: user.role === 'admin' ? user.societyId : req.body.societyId,
+      });
+
+      const resident = await storage.createUser(validatedData);
+      res.json(resident);
+    } catch (error) {
+      console.error("Error creating resident:", error);
+      res.status(500).json({ message: "Failed to create resident" });
+    }
+  });
+
+  app.get("/api/residents", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      
+      // Only admins and super admins can view all residents
+      if (user.role === 'resident') {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      // For now, we'll need to implement a getResidentsBySociety method
+      // This is a basic implementation that returns empty array
+      res.json([]);
+    } catch (error) {
+      console.error("Error fetching residents:", error);
+      res.status(500).json({ message: "Failed to fetch residents" });
     }
   });
 
