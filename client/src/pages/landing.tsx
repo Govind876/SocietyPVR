@@ -70,20 +70,20 @@ export default function Landing() {
           className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10"
         />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
                 Modern Society{" "}
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   Management
                 </span>{" "}
                 Made Simple
               </h1>
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+              <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
                 Streamline your residential society operations with our comprehensive management platform. 
                 From maintenance to community engagement, we've got you covered.
               </p>
@@ -175,7 +175,7 @@ export default function Landing() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20">
+      <section className="py-12 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-16"
@@ -184,11 +184,11 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold text-foreground mb-4">Everything You Need</h2>
-            <p className="text-xl text-muted-foreground">Powerful features designed for modern society management</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">Everything You Need</h2>
+            <p className="text-lg md:text-xl text-muted-foreground">Powerful features designed for modern society management</p>
           </motion.div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
