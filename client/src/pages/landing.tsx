@@ -1,13 +1,23 @@
+import { useState } from "react";
 import { motion, useScroll, useTransform, useMotionValue } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import Navbar from "@/components/layout/navbar";
+import LoginForm from "@/components/auth/login-form";
+import SignupForm from "@/components/auth/signup-form";
+import { useAuth } from "@/hooks/useAuth";
 import { Building, Users, Calendar, Bell, ChartBar, Smartphone } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Landing() {
   const { scrollY } = useScroll();
   const yBg = useTransform(scrollY, [0, 500], [0, -100]);
   const yFloat = useTransform(scrollY, [0, 500], [0, 50]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const { isAuthenticated } = useAuth();
+  const [, setLocation] = useLocation();
   
   const features = [
     {
@@ -80,7 +90,7 @@ export default function Landing() {
                 <Button 
                   size="lg" 
                   className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all transform hover:scale-105"
-                  onClick={() => window.location.href = '/api/login'}
+                  onClick={() => setShowAuthModal(true)}
                   data-testid="button-start-trial"
                 >
                   Start Free Trial
@@ -244,7 +254,7 @@ export default function Landing() {
               size="lg"
               variant="secondary"
               className="bg-white text-primary hover:bg-gray-50 transition-all transform hover:scale-105"
-              onClick={() => window.location.href = '/api/login'}
+              onClick={() => setShowAuthModal(true)}
               data-testid="button-get-started"
             >
               Get Started Today
@@ -252,6 +262,31 @@ export default function Landing() {
           </motion.div>
         </div>
       </section>
+
+      {/* Authentication Modal */}
+      <Dialog open={showAuthModal} onOpenChange={setShowAuthModal}>
+        <DialogContent className="sm:max-w-md border-0 p-0">
+          {authMode === "login" ? (
+            <LoginForm
+              onSuccess={() => {
+                setShowAuthModal(false);
+                // Refresh the page to redirect to dashboard
+                window.location.reload();
+              }}
+              onSwitchToSignup={() => setAuthMode("signup")}
+            />
+          ) : (
+            <SignupForm
+              onSuccess={() => {
+                setShowAuthModal(false);
+                // Refresh the page to redirect to dashboard
+                window.location.reload();
+              }}
+              onSwitchToLogin={() => setAuthMode("login")}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
