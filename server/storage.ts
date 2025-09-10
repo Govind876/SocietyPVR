@@ -10,6 +10,7 @@ import {
   polls,
   pollOptions,
   votes,
+  marketplaceItems,
   type User,
   type UpsertUser,
   type Society,
@@ -30,6 +31,8 @@ import {
   type InsertPollOption,
   type InsertVote,
   type PollWithOptions,
+  type MarketplaceItem,
+  type InsertMarketplaceItem,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql } from "drizzle-orm";
@@ -97,6 +100,15 @@ export interface IStorage {
   getUserVote(pollId: string, userId: string): Promise<Vote[]>;
   hasUserVoted(pollId: string, userId: string): Promise<boolean>;
   getPollResults(pollId: string): Promise<{ optionId: string; optionText: string; voteCount: number }[]>;
+  
+  // Marketplace operations
+  createMarketplaceItem(item: InsertMarketplaceItem): Promise<MarketplaceItem>;
+  getMarketplaceItemsBySociety(societyId: string): Promise<MarketplaceItem[]>;
+  getMarketplaceItemsBySeller(sellerId: string): Promise<MarketplaceItem[]>;
+  getMarketplaceItem(id: string): Promise<MarketplaceItem | undefined>;
+  updateMarketplaceItemStatus(id: string, status: string): Promise<MarketplaceItem>;
+  updateMarketplaceItem(id: string, updates: Partial<InsertMarketplaceItem>): Promise<MarketplaceItem>;
+  deleteMarketplaceItem(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -456,6 +468,55 @@ export class DatabaseStorage implements IStorage {
       optionText: result.optionText,
       voteCount: Number(result.voteCount),
     }));
+  }
+
+  // Marketplace operations
+  async createMarketplaceItem(item: InsertMarketplaceItem): Promise<MarketplaceItem> {
+    const [marketplaceItem] = await db.insert(marketplaceItems).values(item).returning();
+    return marketplaceItem;
+  }
+
+  async getMarketplaceItemsBySociety(societyId: string): Promise<MarketplaceItem[]> {
+    return await db
+      .select()
+      .from(marketplaceItems)
+      .where(and(eq(marketplaceItems.societyId, societyId), eq(marketplaceItems.status, "active")))
+      .orderBy(desc(marketplaceItems.createdAt));
+  }
+
+  async getMarketplaceItemsBySeller(sellerId: string): Promise<MarketplaceItem[]> {
+    return await db
+      .select()
+      .from(marketplaceItems)
+      .where(eq(marketplaceItems.sellerId, sellerId))
+      .orderBy(desc(marketplaceItems.createdAt));
+  }
+
+  async getMarketplaceItem(id: string): Promise<MarketplaceItem | undefined> {
+    const [item] = await db.select().from(marketplaceItems).where(eq(marketplaceItems.id, id));
+    return item;
+  }
+
+  async updateMarketplaceItemStatus(id: string, status: string): Promise<MarketplaceItem> {
+    const [item] = await db
+      .update(marketplaceItems)
+      .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(marketplaceItems.id, id))
+      .returning();
+    return item;
+  }
+
+  async updateMarketplaceItem(id: string, updates: Partial<InsertMarketplaceItem>): Promise<MarketplaceItem> {
+    const [item] = await db
+      .update(marketplaceItems)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(marketplaceItems.id, id))
+      .returning();
+    return item;
+  }
+
+  async deleteMarketplaceItem(id: string): Promise<void> {
+    await db.delete(marketplaceItems).where(eq(marketplaceItems.id, id));
   }
 }
 

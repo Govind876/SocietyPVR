@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Building, Bell, Menu } from "lucide-react";
+import { Building, Bell, Menu, ShoppingBag } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated } = useAuth();

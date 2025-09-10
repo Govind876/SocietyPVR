@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupSimpleAuth, isSimpleAuthenticated } from "./simpleAuth";
-import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema, insertPollSchema, insertVoteSchema } from "@shared/schema";
+import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema, insertPollSchema, insertVoteSchema, insertMarketplaceItemSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Simple Auth setup
@@ -465,6 +465,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error updating poll status:", error);
       res.status(500).json({ message: "Failed to update poll status" });
+    }
+  });
+
+  // Marketplace routes
+  app.get("/api/marketplace", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user?.societyId) {
+        return res.status(400).json({ message: "User must belong to a society" });
+      }
+      
+      const items = await storage.getMarketplaceItemsBySociety(user.societyId);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching marketplace items:", error);
+      res.status(500).json({ message: "Failed to fetch marketplace items" });
+    }
+  });
+
+  app.post("/api/marketplace", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user?.societyId) {
+        return res.status(400).json({ message: "User must belong to a society" });
+      }
+
+      const validatedData = insertMarketplaceItemSchema.parse({
+        ...req.body,
+        sellerId: user.id,
+        sellerName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unknown",
+        societyId: user.societyId,
+      });
+
+      const item = await storage.createMarketplaceItem(validatedData);
+      res.json(item);
+    } catch (error) {
+      console.error("Error creating marketplace item:", error);
+      res.status(500).json({ message: "Failed to create marketplace item" });
+    }
+  });
+
+  app.get("/api/marketplace/my-items", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const items = await storage.getMarketplaceItemsBySeller(user.id);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching user marketplace items:", error);
+      res.status(500).json({ message: "Failed to fetch your marketplace items" });
+    }
+  });
+
+  app.get("/api/marketplace/:id", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const item = await storage.getMarketplaceItem(req.params.id);
+      
+      if (!item) {
+        return res.status(404).json({ message: "Item not found" });
+      }
+
+      // Check if user can access this item (same society)
+      if (item.societyId !== user.societyId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      res.json(item);
+    } catch (error) {
+      console.error("Error fetching marketplace item:", error);
+      res.status(500).json({ message: "Failed to fetch marketplace item" });
+    }
+  });
+
+  app.patch("/api/marketplace/:id", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const item = await storage.getMarketplaceItem(req.params.id);
+      
+      if (!item) {
+        return res.status(404).json({ message: "Item not found" });
+      }
+
+      // Only item owner can update
+      if (item.sellerId !== user.id) {
+        return res.status(403).json({ message: "Only item owner can update" });
+      }
+
+      const validatedData = insertMarketplaceItemSchema.partial().parse(req.body);
+      const updatedItem = await storage.updateMarketplaceItem(req.params.id, validatedData);
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating marketplace item:", error);
+      res.status(500).json({ message: "Failed to update marketplace item" });
+    }
+  });
+
+  app.patch("/api/marketplace/:id/status", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const { status } = req.body;
+      const item = await storage.getMarketplaceItem(req.params.id);
+      
+      if (!item) {
+        return res.status(404).json({ message: "Item not found" });
+      }
+
+      // Only item owner can change status
+      if (item.sellerId !== user.id) {
+        return res.status(403).json({ message: "Only item owner can change status" });
+      }
+
+      const updatedItem = await storage.updateMarketplaceItemStatus(req.params.id, status);
+      res.json(updatedItem);
+    } catch (error) {
+      console.error("Error updating marketplace item status:", error);
+      res.status(500).json({ message: "Failed to update item status" });
+    }
+  });
+
+  app.delete("/api/marketplace/:id", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const item = await storage.getMarketplaceItem(req.params.id);
+      
+      if (!item) {
+        return res.status(404).json({ message: "Item not found" });
+      }
+
+      // Only item owner can delete
+      if (item.sellerId !== user.id) {
+        return res.status(403).json({ message: "Only item owner can delete" });
+      }
+
+      await storage.deleteMarketplaceItem(req.params.id);
+      res.json({ message: "Item deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting marketplace item:", error);
+      res.status(500).json({ message: "Failed to delete marketplace item" });
     }
   });
 

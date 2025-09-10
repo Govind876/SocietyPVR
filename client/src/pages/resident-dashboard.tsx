@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/navbar";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { IndianRupee, AlertCircle, Calendar, Megaphone, CreditCard, UserCog, Vote } from "lucide-react";
+import { IndianRupee, AlertCircle, Calendar, Megaphone, CreditCard, UserCog, Vote, ShoppingBag } from "lucide-react";
 import type { SocietyStats, Complaint, Announcement } from "@shared/schema";
 
 export default function ResidentDashboard() {
@@ -59,6 +59,7 @@ export default function ResidentDashboard() {
   const quickServices = [
     { icon: AlertCircle, label: "Raise Complaint", color: "from-primary to-accent", href: "/resident" },
     { icon: Vote, label: "Digital Voting", color: "from-green-400 to-green-600", href: "/voting" },
+    { icon: ShoppingBag, label: "Marketplace", color: "from-orange-400 to-orange-600", href: "/marketplace" },
     { icon: Calendar, label: "Book Facility", color: "from-secondary to-accent", href: "/resident" },
     { icon: CreditCard, label: "Pay Dues", color: "from-primary to-secondary", href: "/resident" },
   ];

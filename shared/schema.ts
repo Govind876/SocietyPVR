@@ -409,3 +409,48 @@ export interface PollWithOptions extends Poll {
   hasVoted?: boolean;
   userVote?: Vote[];
 }
+
+// Marketplace Tables
+export const marketplaceItemStatusEnum = pgEnum("marketplace_item_status", ["active", "sold", "reserved", "removed"]);
+
+export const marketplaceItems = pgTable("marketplace_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  price: integer("price").notNull(), // price in paise
+  category: varchar("category").notNull(),
+  condition: varchar("condition").notNull(), // new, like_new, good, fair
+  sellerId: varchar("seller_id").notNull().references(() => users.id),
+  sellerName: varchar("seller_name").notNull(),
+  sellerContact: varchar("seller_contact"),
+  societyId: varchar("society_id").notNull().references(() => societies.id),
+  images: text("images").array(),
+  status: marketplaceItemStatusEnum("status").default("active").notNull(),
+  location: varchar("location"), // flat number or common area
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Marketplace relations
+export const marketplaceItemsRelations = relations(marketplaceItems, ({ one }) => ({
+  seller: one(users, {
+    fields: [marketplaceItems.sellerId],
+    references: [users.id],
+  }),
+  society: one(societies, {
+    fields: [marketplaceItems.societyId],
+    references: [societies.id],
+  }),
+}));
+
+// Marketplace types
+export type MarketplaceItem = typeof marketplaceItems.$inferSelect;
+
+// Marketplace insert schema
+export const insertMarketplaceItemSchema = createInsertSchema(marketplaceItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertMarketplaceItem = z.infer<typeof insertMarketplaceItemSchema>;
