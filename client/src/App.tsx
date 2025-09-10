@@ -26,25 +26,25 @@ function Router() {
   return (
     <Switch>
       {!isAuthenticated ? (
-        <Route path="/" component={Landing} />
+        <>
+          <Route path="/" component={Landing} />
+          <Route component={NotFound} />
+        </>
       ) : (
         <>
-          {user?.role === 'super_admin' && (
-            <Route path="/" component={SuperAdminDashboard} />
-          )}
-          {user?.role === 'admin' && (
-            <Route path="/" component={AdminDashboard} />
-          )}
-          {user?.role === 'resident' && (
-            <Route path="/" component={ResidentDashboard} />
-          )}
+          <Route path="/" component={() => {
+            if (user?.role === 'super_admin') return <SuperAdminDashboard />;
+            if (user?.role === 'admin') return <AdminDashboard />;
+            if (user?.role === 'resident') return <ResidentDashboard />;
+            return <Landing />; // Fallback if role is not recognized
+          }} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/resident" component={ResidentDashboard} />
           <Route path="/super-admin" component={SuperAdminDashboard} />
           <Route path="/voting" component={Voting} />
+          <Route component={NotFound} />
         </>
       )}
-      <Route component={NotFound} />
     </Switch>
   );
 }
