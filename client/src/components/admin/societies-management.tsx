@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { CreateSocietyModal } from "./create-society-modal";
 import { Building, Users, MapPin, Search, Plus } from "lucide-react";
 import { format } from "date-fns";
@@ -11,6 +12,21 @@ import type { Society } from "@shared/schema";
 
 export function SocietiesManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
+
+  const handleEditSociety = (societyId: string) => {
+    toast({
+      title: "Edit Society",
+      description: "Society editing feature will be available soon.",
+    });
+  };
+
+  const handleManageSociety = (societyId: string) => {
+    toast({
+      title: "Manage Society",
+      description: "Society management feature will be available soon.",
+    });
+  };
 
   const { data: societies = [], isLoading, error } = useQuery<Society[]>({
     queryKey: ["/api/societies"],
@@ -140,14 +156,16 @@ export function SocietiesManagement() {
                 <div className="flex gap-2 pt-2">
                   <Button 
                     variant="outline" 
-                    size="sm" 
+                    size="sm"
+                    onClick={() => handleEditSociety(society.id)}
                     className="flex-1"
                     data-testid={`button-edit-society-${society.id}`}
                   >
                     Edit
                   </Button>
                   <Button 
-                    size="sm" 
+                    size="sm"
+                    onClick={() => handleManageSociety(society.id)}
                     className="flex-1"
                     data-testid={`button-manage-society-${society.id}`}
                   >

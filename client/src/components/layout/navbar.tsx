@@ -1,10 +1,25 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { Building, Bell, Menu } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  const handleNotifications = () => {
+    toast({
+      title: "Notifications",
+      description: "No new notifications at the moment.",
+    });
+  };
+
+  const handleMobileMenu = () => {
+    setShowMobileMenu(!showMobileMenu);
+  };
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-border">
@@ -33,6 +48,7 @@ export default function Navbar() {
                 <Button 
                   variant="ghost" 
                   size="icon"
+                  onClick={handleNotifications}
                   className="rounded-lg hover:bg-muted"
                   data-testid="button-notifications"
                 >
@@ -81,6 +97,7 @@ export default function Navbar() {
           <Button
             variant="ghost"
             size="icon"
+            onClick={handleMobileMenu}
             className="md:hidden"
             data-testid="button-mobile-menu"
           >

@@ -99,6 +99,9 @@ export default function Landing() {
                 <Button 
                   variant="outline" 
                   size="lg"
+                  onClick={() => {
+                    document.querySelector('#features')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
                   className="border-2 hover:bg-primary hover:text-white transition-all"
                   data-testid="button-learn-more"
                 >
@@ -175,7 +178,7 @@ export default function Landing() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-12 md:py-20">
+      <section id="features" className="py-12 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-16"
