@@ -9,7 +9,7 @@ import SignupForm from "@/components/auth/signup-form";
 import { useAuth } from "@/hooks/useAuth";
 import { Building, Users, Calendar, Bell, ChartBar, Smartphone } from "lucide-react";
 import { useLocation } from "wouter";
-import societyImage from "../assets/society-image.png";
+// Using public image path instead of import
 
 export default function Landing() {
   const { scrollY } = useScroll();
@@ -115,9 +115,13 @@ export default function Landing() {
             >
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img 
-                  src={societyImage} 
+                  src="/images/society-image.png" 
                   alt="Modern residential society complex with amenities" 
                   className="w-full h-auto hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    console.error("Image failed to load");
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent"></div>
               </div>
