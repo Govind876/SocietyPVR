@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 import { ReactNode } from "react";
-import { Card, CardProps } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
-interface AnimatedCardProps extends CardProps {
+interface AnimatedCardProps {
   children: ReactNode;
   delay?: number;
   direction?: "up" | "down" | "left" | "right";
   hover?: boolean;
+  className?: string;
 }
 
 export function AnimatedCard({ 
@@ -14,8 +15,7 @@ export function AnimatedCard({
   delay = 0, 
   direction = "up", 
   hover = true, 
-  className = "",
-  ...props 
+  className = ""
 }: AnimatedCardProps) {
   const directionMap = {
     up: { y: 20 },
@@ -34,7 +34,7 @@ export function AnimatedCard({
       whileHover={hoverEffect}
       className="h-full"
     >
-      <Card className={`h-full transition-all duration-300 ${hover ? 'hover:shadow-lg' : ''} ${className}`} {...props}>
+      <Card className={`h-full transition-all duration-300 ${hover ? 'hover:shadow-lg' : ''} ${className}`}>
         {children}
       </Card>
     </motion.div>

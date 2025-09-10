@@ -9,6 +9,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import ResidentDashboard from "@/pages/resident-dashboard";
 import SuperAdminDashboard from "@/pages/super-admin-dashboard";
 import NotFound from "@/pages/not-found";
+import type { User } from "@shared/schema";
 
 function Router() {
   const { user, isLoading, isAuthenticated } = useAuth();

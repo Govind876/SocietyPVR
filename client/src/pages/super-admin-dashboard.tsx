@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/navbar";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Building, Users, TrendingUp, Server, PlusCircle, ShieldQuestion, Settings, Database } from "lucide-react";
+import type { GlobalStats, Society } from "@shared/schema";
 
 export default function SuperAdminDashboard() {
   const { toast } = useToast();
@@ -29,13 +30,13 @@ export default function SuperAdminDashboard() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<GlobalStats>({
     queryKey: ["/api/dashboard/stats"],
     enabled: isAuthenticated && user?.role === 'super_admin',
     retry: false,
   });
 
-  const { data: societies, isLoading: societiesLoading } = useQuery({
+  const { data: societies, isLoading: societiesLoading } = useQuery<Society[]>({
     queryKey: ["/api/societies"],
     enabled: isAuthenticated && user?.role === 'super_admin',
     retry: false,

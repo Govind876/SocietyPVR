@@ -4,29 +4,29 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(210, 40%, 98%);
-  --foreground: hsl(222, 84%, 4.9%);
+  --background: hsl(120, 60%, 97%);
+  --foreground: hsl(215, 25%, 20%);
   --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(222, 84%, 4.9%);
+  --card-foreground: hsl(215, 25%, 20%);
   --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(222, 84%, 4.9%);
-  --primary: hsl(217, 91%, 60%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(156, 72%, 67%);
-  --secondary-foreground: hsl(222, 84%, 4.9%);
-  --muted: hsl(210, 40%, 96%);
+  --popover-foreground: hsl(215, 25%, 20%);
+  --primary: hsl(142, 86%, 28%);
+  --primary-foreground: hsl(120, 60%, 97%);
+  --secondary: hsl(46, 100%, 77%);
+  --secondary-foreground: hsl(215, 25%, 20%);
+  --muted: hsl(120, 30%, 94%);
   --muted-foreground: hsl(215, 16%, 46.9%);
-  --accent: hsl(187, 100%, 42%);
-  --accent-foreground: hsl(210, 40%, 98%);
+  --accent: hsl(25, 100%, 67%);
+  --accent-foreground: hsl(120, 60%, 97%);
   --destructive: hsl(0, 72%, 51%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --border: hsl(214, 32%, 91%);
-  --input: hsl(214, 32%, 91%);
-  --ring: hsl(217, 91%, 60%);
-  --chart-1: hsl(217, 91%, 60%);
-  --chart-2: hsl(156, 72%, 67%);
-  --chart-3: hsl(187, 100%, 42%);
-  --chart-4: hsl(147, 72%, 50%);
+  --destructive-foreground: hsl(120, 60%, 97%);
+  --border: hsl(120, 20%, 88%);
+  --input: hsl(120, 20%, 88%);
+  --ring: hsl(142, 86%, 28%);
+  --chart-1: hsl(142, 86%, 28%);
+  --chart-2: hsl(46, 100%, 77%);
+  --chart-3: hsl(25, 100%, 67%);
+  --chart-4: hsl(280, 100%, 70%);
   --chart-5: hsl(341, 75%, 51%);
   --sidebar: hsl(180, 6.6667%, 97.0588%);
   --sidebar-foreground: hsl(210, 25%, 7.8431%);
@@ -96,11 +96,11 @@
 
 @layer utilities {
   .gradient-bg {
-    background: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(187, 100%, 42%) 100%);
+    background: linear-gradient(135deg, hsl(142, 86%, 28%) 0%, hsl(46, 100%, 77%) 100%);
   }
 
   .gradient-bg-secondary {
-    background: linear-gradient(135deg, hsl(156, 72%, 67%) 0%, hsl(187, 100%, 42%) 100%);
+    background: linear-gradient(135deg, hsl(46, 100%, 77%) 0%, hsl(25, 100%, 67%) 100%);
   }
 
   .glass-effect {

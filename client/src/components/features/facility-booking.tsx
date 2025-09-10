@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Calendar, Clock } from "lucide-react";
+import type { Facility } from "@shared/schema";
 
 const bookingSchema = z.object({
   facilityId: z.string().min(1, "Please select a facility"),
@@ -28,7 +29,7 @@ export default function FacilityBooking() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: facilities } = useQuery({
+  const { data: facilities } = useQuery<Facility[]>({
     queryKey: ["/api/facilities"],
     enabled: isOpen,
   });

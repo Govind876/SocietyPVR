@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/navbar";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Users, AlertTriangle, IndianRupee, Calendar, UserPlus, Megaphone, FileText, TrendingUp } from "lucide-react";
+import type { SocietyStats, Complaint, Announcement } from "@shared/schema";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -29,19 +30,19 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<SocietyStats>({
     queryKey: ["/api/dashboard/stats"],
     enabled: isAuthenticated && user?.role === 'admin',
     retry: false,
   });
 
-  const { data: complaints, isLoading: complaintsLoading } = useQuery({
+  const { data: complaints, isLoading: complaintsLoading } = useQuery<Complaint[]>({
     queryKey: ["/api/complaints"],
     enabled: isAuthenticated && user?.role === 'admin',
     retry: false,
   });
 
-  const { data: announcements, isLoading: announcementsLoading } = useQuery({
+  const { data: announcements, isLoading: announcementsLoading } = useQuery<Announcement[]>({
     queryKey: ["/api/announcements"],
     enabled: isAuthenticated && user?.role === 'admin',
     retry: false,

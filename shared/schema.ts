@@ -291,3 +291,18 @@ export type InsertSociety = z.infer<typeof insertSocietySchema>;
 export type InsertComplaint = z.infer<typeof insertComplaintSchema>;
 export type InsertFacilityBooking = z.infer<typeof insertFacilityBookingSchema>;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+
+// API Response Types
+export interface SocietyStats {
+  totalResidents: number;
+  openComplaints: number;
+  facilityBookings: number;
+  pendingDues: number;
+}
+
+export interface GlobalStats {
+  totalSocieties: number;
+  totalUsers: number;
+  totalRevenue: number;
+  systemHealth: number;
+}
