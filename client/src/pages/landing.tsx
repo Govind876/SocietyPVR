@@ -1,10 +1,14 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValue } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/layout/navbar";
 import { Building, Users, Calendar, Bell, ChartBar, Smartphone } from "lucide-react";
 
 export default function Landing() {
+  const { scrollY } = useScroll();
+  const yBg = useTransform(scrollY, [0, 500], [0, -100]);
+  const yFloat = useTransform(scrollY, [0, 500], [0, 50]);
+  
   const features = [
     {
       icon: Users,
@@ -50,7 +54,10 @@ export default function Landing() {
       
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5"></div>
+        <motion.div 
+          style={{ y: yBg }}
+          className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10"
+        />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -107,16 +114,48 @@ export default function Landing() {
           </div>
         </div>
         
-        {/* Floating Elements */}
+        {/* Enhanced Floating Elements */}
         <motion.div
           className="absolute top-1/4 left-10 w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-full opacity-20"
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 3, repeat: Infinity }}
+          style={{ y: yFloat }}
+          animate={{ 
+            y: [0, -10, 0],
+            rotate: [0, 180, 360],
+            scale: [1, 1.1, 1]
+          }}
+          transition={{ 
+            duration: 4, 
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
         />
         <motion.div
           className="absolute bottom-1/4 right-10 w-12 h-12 bg-gradient-to-r from-secondary to-accent rounded-full opacity-20"
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+          style={{ y: yFloat }}
+          animate={{ 
+            y: [0, -15, 0],
+            x: [0, 5, 0],
+            scale: [1, 1.2, 1]
+          }}
+          transition={{ 
+            duration: 3, 
+            repeat: Infinity, 
+            delay: 1,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute top-1/2 right-1/4 w-8 h-8 bg-gradient-to-r from-accent to-secondary rounded-full opacity-15"
+          animate={{ 
+            y: [0, -20, 0],
+            opacity: [0.15, 0.3, 0.15]
+          }}
+          transition={{ 
+            duration: 5, 
+            repeat: Infinity, 
+            delay: 2,
+            ease: "easeInOut"
+          }}
         />
       </section>
 
@@ -153,6 +192,34 @@ export default function Landing() {
                     <p className="text-muted-foreground">{feature.description}</p>
                   </CardContent>
                 </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 bg-gradient-to-r from-primary/5 to-accent/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { number: "500+", label: "Societies", delay: 0 },
+              { number: "10K+", label: "Happy Residents", delay: 0.1 },
+              { number: "25K+", label: "Requests Handled", delay: 0.2 },
+              { number: "99.9%", label: "Uptime", delay: 0.3 },
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                className="text-center"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: stat.delay }}
+                viewport={{ once: true }}
+              >
+                <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">
+                  {stat.number}
+                </div>
+                <div className="text-muted-foreground font-medium">{stat.label}</div>
               </motion.div>
             ))}
           </div>
