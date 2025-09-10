@@ -7,6 +7,9 @@ import {
   facilityBookings,
   announcements,
   maintenanceBills,
+  polls,
+  pollOptions,
+  votes,
   type User,
   type UpsertUser,
   type Society,
@@ -20,6 +23,13 @@ import {
   type InsertAnnouncement,
   type MaintenanceBill,
   type Flat,
+  type Poll,
+  type PollOption,
+  type Vote,
+  type InsertPoll,
+  type InsertPollOption,
+  type InsertVote,
+  type PollWithOptions,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql } from "drizzle-orm";
@@ -76,6 +86,17 @@ export interface IStorage {
     totalRevenue: number;
     systemHealth: number;
   }>;
+  
+  // Voting operations
+  createPoll(poll: InsertPoll): Promise<Poll>;
+  getPollsBySociety(societyId: string): Promise<PollWithOptions[]>;
+  getPoll(pollId: string): Promise<PollWithOptions | undefined>;
+  updatePollStatus(pollId: string, status: string): Promise<Poll>;
+  createPollOption(option: InsertPollOption): Promise<PollOption>;
+  castVote(vote: InsertVote): Promise<Vote>;
+  getUserVote(pollId: string, userId: string): Promise<Vote[]>;
+  hasUserVoted(pollId: string, userId: string): Promise<boolean>;
+  getPollResults(pollId: string): Promise<{ optionId: string; optionText: string; voteCount: number }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -306,6 +327,135 @@ export class DatabaseStorage implements IStorage {
       totalRevenue: Number(revenueSum.total),
       systemHealth: 98, // Mock system health percentage
     };
+  }
+
+  // Voting operations
+  async createPoll(pollData: InsertPoll): Promise<Poll> {
+    const [poll] = await db.insert(polls).values(pollData).returning();
+    return poll;
+  }
+
+  async getPollsBySociety(societyId: string): Promise<PollWithOptions[]> {
+    const pollsWithOptions = await db
+      .select({
+        poll: polls,
+        option: pollOptions,
+      })
+      .from(polls)
+      .leftJoin(pollOptions, eq(polls.id, pollOptions.pollId))
+      .where(eq(polls.societyId, societyId))
+      .orderBy(desc(polls.createdAt));
+
+    // Group by poll
+    const pollMap = new Map<string, PollWithOptions>();
+    
+    for (const row of pollsWithOptions) {
+      if (!pollMap.has(row.poll.id)) {
+        pollMap.set(row.poll.id, {
+          ...row.poll,
+          options: [],
+          voteCount: 0,
+        });
+      }
+      
+      if (row.option) {
+        pollMap.get(row.poll.id)!.options.push(row.option);
+      }
+    }
+
+    // Get vote counts for each poll
+    for (const [pollId, poll] of pollMap) {
+      const [voteCount] = await db
+        .select({ count: count() })
+        .from(votes)
+        .where(eq(votes.pollId, pollId));
+      poll.voteCount = voteCount.count;
+    }
+
+    return Array.from(pollMap.values());
+  }
+
+  async getPoll(pollId: string): Promise<PollWithOptions | undefined> {
+    const [poll] = await db.select().from(polls).where(eq(polls.id, pollId));
+    if (!poll) return undefined;
+
+    const options = await db
+      .select()
+      .from(pollOptions)
+      .where(eq(pollOptions.pollId, pollId))
+      .orderBy(pollOptions.orderIndex);
+
+    const [voteCount] = await db
+      .select({ count: count() })
+      .from(votes)
+      .where(eq(votes.pollId, pollId));
+
+    return {
+      ...poll,
+      options,
+      voteCount: voteCount.count,
+    };
+  }
+
+  async updatePollStatus(pollId: string, status: string): Promise<Poll> {
+    const [updated] = await db
+      .update(polls)
+      .set({ status: status as any, updatedAt: new Date() })
+      .where(eq(polls.id, pollId))
+      .returning();
+    return updated;
+  }
+
+  async createPollOption(optionData: InsertPollOption): Promise<PollOption> {
+    const [option] = await db.insert(pollOptions).values(optionData).returning();
+    return option;
+  }
+
+  async castVote(voteData: InsertVote): Promise<Vote> {
+    // Check if user already voted for this poll
+    const existingVote = await db
+      .select()
+      .from(votes)
+      .where(and(eq(votes.pollId, voteData.pollId), eq(votes.voterId, voteData.voterId)));
+
+    if (existingVote.length > 0) {
+      throw new Error("User has already voted for this poll");
+    }
+
+    const [vote] = await db.insert(votes).values(voteData).returning();
+    return vote;
+  }
+
+  async getUserVote(pollId: string, userId: string): Promise<Vote[]> {
+    return await db
+      .select()
+      .from(votes)
+      .where(and(eq(votes.pollId, pollId), eq(votes.voterId, userId)));
+  }
+
+  async hasUserVoted(pollId: string, userId: string): Promise<boolean> {
+    const userVotes = await this.getUserVote(pollId, userId);
+    return userVotes.length > 0;
+  }
+
+  async getPollResults(pollId: string): Promise<{ optionId: string; optionText: string; voteCount: number }[]> {
+    const results = await db
+      .select({
+        optionId: pollOptions.id,
+        optionText: pollOptions.optionText,
+        voteCount: count(votes.id),
+      })
+      .from(pollOptions)
+      .leftJoin(votes, eq(pollOptions.id, votes.optionId))
+      .where(eq(pollOptions.pollId, pollId))
+      .groupBy(pollOptions.id, pollOptions.optionText)
+      .orderBy(pollOptions.orderIndex);
+
+    return results.map(result => ({
+      optionId: result.optionId,
+      optionText: result.optionText,
+      voteCount: Number(result.voteCount),
+    }));
   }
 }
 

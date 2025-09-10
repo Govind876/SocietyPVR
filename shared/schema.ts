@@ -306,3 +306,106 @@ export interface GlobalStats {
   totalRevenue: number;
   systemHealth: number;
 }
+
+// Voting system tables
+export const polls = pgTable("polls", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  societyId: varchar("society_id").notNull().references(() => societies.id),
+  createdById: varchar("created_by_id").notNull().references(() => users.id),
+  startDate: timestamp("start_date").defaultNow(),
+  endDate: timestamp("end_date").notNull(),
+  status: varchar("status", { enum: ["draft", "active", "closed"] }).default("draft").notNull(),
+  pollType: varchar("poll_type", { enum: ["single_choice", "multiple_choice", "yes_no"] }).default("single_choice").notNull(),
+  isAnonymous: boolean("is_anonymous").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const pollOptions = pgTable("poll_options", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pollId: varchar("poll_id").notNull().references(() => polls.id, { onDelete: "cascade" }),
+  optionText: varchar("option_text").notNull(),
+  orderIndex: integer("order_index").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const votes = pgTable("votes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  pollId: varchar("poll_id").notNull().references(() => polls.id, { onDelete: "cascade" }),
+  voterId: varchar("voter_id").notNull().references(() => users.id),
+  optionId: varchar("option_id").notNull().references(() => pollOptions.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Voting relations
+export const pollsRelations = relations(polls, ({ one, many }) => ({
+  society: one(societies, {
+    fields: [polls.societyId],
+    references: [societies.id],
+  }),
+  createdBy: one(users, {
+    fields: [polls.createdById],
+    references: [users.id],
+  }),
+  options: many(pollOptions),
+  votes: many(votes),
+}));
+
+export const pollOptionsRelations = relations(pollOptions, ({ one, many }) => ({
+  poll: one(polls, {
+    fields: [pollOptions.pollId],
+    references: [polls.id],
+  }),
+  votes: many(votes),
+}));
+
+export const votesRelations = relations(votes, ({ one }) => ({
+  poll: one(polls, {
+    fields: [votes.pollId],
+    references: [polls.id],
+  }),
+  voter: one(users, {
+    fields: [votes.voterId],
+    references: [users.id],
+  }),
+  option: one(pollOptions, {
+    fields: [votes.optionId],
+    references: [pollOptions.id],
+  }),
+}));
+
+// Voting types
+export type Poll = typeof polls.$inferSelect;
+export type PollOption = typeof pollOptions.$inferSelect;
+export type Vote = typeof votes.$inferSelect;
+
+// Voting insert schemas
+export const insertPollSchema = createInsertSchema(polls).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPollOptionSchema = createInsertSchema(pollOptions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertVoteSchema = createInsertSchema(votes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPoll = z.infer<typeof insertPollSchema>;
+export type InsertPollOption = z.infer<typeof insertPollOptionSchema>;
+export type InsertVote = z.infer<typeof insertVoteSchema>;
+
+// Extended types for UI
+export interface PollWithOptions extends Poll {
+  options: PollOption[];
+  voteCount: number;
+  hasVoted?: boolean;
+  userVote?: Vote[];
+}
