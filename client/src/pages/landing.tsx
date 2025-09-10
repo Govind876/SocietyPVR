@@ -9,6 +9,7 @@ import SignupForm from "@/components/auth/signup-form";
 import { useAuth } from "@/hooks/useAuth";
 import { Building, Users, Calendar, Bell, ChartBar, Smartphone } from "lucide-react";
 import { useLocation } from "wouter";
+import societyImage from "@assets/generated_images/Modern_residential_society_complex_f1d8f2d0.png";
 
 export default function Landing() {
   const { scrollY } = useScroll();
@@ -114,8 +115,8 @@ export default function Landing() {
             >
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img 
-                  src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600" 
-                  alt="Modern residential buildings" 
+                  src={societyImage} 
+                  alt="Modern residential society complex with amenities" 
                   className="w-full h-auto hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent"></div>
