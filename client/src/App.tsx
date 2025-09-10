@@ -9,7 +9,6 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import ResidentDashboard from "@/pages/resident-dashboard";
 import SuperAdminDashboard from "@/pages/super-admin-dashboard";
 import Voting from "@/pages/voting";
-import NotFound from "@/pages/not-found";
 import type { User } from "@shared/schema";
 
 function Router() {
@@ -26,10 +25,7 @@ function Router() {
   return (
     <Switch>
       {!isAuthenticated ? (
-        <>
-          <Route path="/" component={Landing} />
-          <Route component={NotFound} />
-        </>
+        <Route path="/" component={Landing} />
       ) : (
         <>
           <Route path="/" component={() => {
@@ -42,7 +38,6 @@ function Router() {
           <Route path="/resident" component={ResidentDashboard} />
           <Route path="/super-admin" component={SuperAdminDashboard} />
           <Route path="/voting" component={Voting} />
-          <Route component={NotFound} />
         </>
       )}
     </Switch>
