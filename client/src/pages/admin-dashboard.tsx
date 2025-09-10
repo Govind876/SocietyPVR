@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/navbar";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Users, AlertTriangle, IndianRupee, Calendar, UserPlus, Megaphone, FileText, TrendingUp } from "lucide-react";
+import { Users, AlertTriangle, IndianRupee, Calendar, UserPlus, Megaphone, FileText, TrendingUp, Vote } from "lucide-react";
 import type { SocietyStats, Complaint, Announcement } from "@shared/schema";
 
 export default function AdminDashboard() {
@@ -57,10 +57,10 @@ export default function AdminDashboard() {
   }
 
   const quickActions = [
-    { icon: UserPlus, label: "Add Resident", color: "from-primary to-accent" },
-    { icon: Megaphone, label: "New Announcement", color: "from-secondary to-accent" },
-    { icon: FileText, label: "Generate Bill", color: "from-primary to-secondary" },
-    { icon: TrendingUp, label: "View Reports", color: "from-accent to-primary" },
+    { icon: UserPlus, label: "Add Resident", color: "from-primary to-accent", href: "/admin" },
+    { icon: Vote, label: "Digital Voting", color: "from-green-400 to-green-600", href: "/voting" },
+    { icon: Megaphone, label: "New Announcement", color: "from-secondary to-accent", href: "/admin" },
+    { icon: TrendingUp, label: "View Reports", color: "from-accent to-primary", href: "/admin" },
   ];
 
   return (
@@ -158,6 +158,7 @@ export default function AdminDashboard() {
                         key={index}
                         variant="ghost"
                         className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
+                        onClick={() => window.location.href = action.href}
                         data-testid={`button-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
                       >
                         <action.icon className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />

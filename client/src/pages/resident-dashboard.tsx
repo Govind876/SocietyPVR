@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/navbar";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { IndianRupee, AlertCircle, Calendar, Megaphone, CreditCard, UserCog } from "lucide-react";
+import { IndianRupee, AlertCircle, Calendar, Megaphone, CreditCard, UserCog, Vote } from "lucide-react";
 import type { SocietyStats, Complaint, Announcement } from "@shared/schema";
 
 export default function ResidentDashboard() {
@@ -57,10 +57,10 @@ export default function ResidentDashboard() {
   }
 
   const quickServices = [
-    { icon: AlertCircle, label: "Raise Complaint", color: "from-primary to-accent" },
-    { icon: Calendar, label: "Book Facility", color: "from-secondary to-accent" },
-    { icon: CreditCard, label: "Pay Dues", color: "from-primary to-secondary" },
-    { icon: UserCog, label: "Update Profile", color: "from-accent to-primary" },
+    { icon: AlertCircle, label: "Raise Complaint", color: "from-primary to-accent", href: "/resident" },
+    { icon: Vote, label: "Digital Voting", color: "from-green-400 to-green-600", href: "/voting" },
+    { icon: Calendar, label: "Book Facility", color: "from-secondary to-accent", href: "/resident" },
+    { icon: CreditCard, label: "Pay Dues", color: "from-primary to-secondary", href: "/resident" },
   ];
 
   return (
@@ -162,6 +162,7 @@ export default function ResidentDashboard() {
                         key={index}
                         variant="ghost"
                         className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
+                        onClick={() => window.location.href = service.href}
                         data-testid={`button-${service.label.toLowerCase().replace(/\s+/g, '-')}`}
                       >
                         <service.icon className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />

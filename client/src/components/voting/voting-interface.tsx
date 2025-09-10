@@ -25,10 +25,7 @@ export function VotingInterface({ poll, onBack }: VotingInterfaceProps) {
 
   const voteMutation = useMutation({
     mutationFn: async (optionId: string) => {
-      return await apiRequest(`/api/polls/${poll.id}/vote`, {
-        method: "POST",
-        body: JSON.stringify({ optionId }),
-      });
+      return await apiRequest(`/api/polls/${poll.id}/vote`, "POST", { optionId });
     },
     onSuccess: () => {
       toast({

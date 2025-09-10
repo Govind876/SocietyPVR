@@ -403,9 +403,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const vote = await storage.castVote(voteData);
       
       res.json(vote);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error casting vote:", error);
-      if (error.message === "User has already voted for this poll") {
+      if (error?.message === "User has already voted for this poll") {
         res.status(400).json({ message: error.message });
       } else {
         res.status(500).json({ message: "Failed to cast vote" });
@@ -462,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const updatedPoll = await storage.updatePollStatus(pollId, status);
       res.json(updatedPoll);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating poll status:", error);
       res.status(500).json({ message: "Failed to update poll status" });
     }

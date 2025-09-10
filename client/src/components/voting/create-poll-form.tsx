@@ -46,10 +46,7 @@ export function CreatePollForm({ onCancel, onSuccess }: CreatePollFormProps) {
 
   const createPollMutation = useMutation({
     mutationFn: async (data: CreatePollFormData) => {
-      return await apiRequest("/api/polls", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return await apiRequest("/api/polls", "POST", data);
     },
     onSuccess: () => {
       toast({
@@ -199,6 +196,7 @@ export function CreatePollForm({ onCancel, onSuccess }: CreatePollFormProps) {
                         <Input 
                           type="datetime-local"
                           {...field}
+                          value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ""}
                           data-testid="input-poll-end-date"
                         />
                       </FormControl>
