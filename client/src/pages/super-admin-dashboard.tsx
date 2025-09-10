@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -9,9 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/navbar";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { Building, Users, TrendingUp, Server, PlusCircle, ShieldQuestion, Settings, Database } from "lucide-react";
+import { CreateSocietyModal } from "@/components/admin/create-society-modal";
+import { SocietiesManagement } from "@/components/admin/societies-management";
 import type { GlobalStats, Society } from "@shared/schema";
 
 export default function SuperAdminDashboard() {
+  const [currentView, setCurrentView] = useState<'dashboard' | 'societies' | 'analytics' | 'plans'>('dashboard');
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
 
@@ -57,6 +60,29 @@ export default function SuperAdminDashboard() {
     { icon: Database, label: "Backup & Restore", color: "from-accent to-primary" },
   ];
 
+  if (currentView === 'societies') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <Navbar />
+        <div className="pt-20 px-4 sm:px-6 lg:px-8 pb-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentView('dashboard')}
+                className="mb-4"
+                data-testid="button-back-to-dashboard"
+              >
+                ← Back to Dashboard
+              </Button>
+            </div>
+            <SocietiesManagement />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <Navbar />
@@ -71,13 +97,13 @@ export default function SuperAdminDashboard() {
             transition={{ duration: 0.6 }}
           >
             <div>
-              <h1 className="text-3xl font-bold text-foreground" data-testid="text-super-admin-dashboard">Super Admin Dashboard</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground" data-testid="text-super-admin-dashboard">Super Admin Dashboard</h1>
               <p className="text-muted-foreground mt-2">Manage all societies and system-wide operations</p>
             </div>
           </motion.div>
           
           {/* System Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
             {[
               { 
                 title: "Total Societies", 
@@ -135,7 +161,7 @@ export default function SuperAdminDashboard() {
           </div>
           
           {/* Management Tools & Recent Activities */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -146,12 +172,33 @@ export default function SuperAdminDashboard() {
                   <CardTitle>System Management</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    {systemManagement.map((tool, index) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <CreateSocietyModal 
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
+                          data-testid="button-add-society"
+                        >
+                          <PlusCircle className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />
+                          <span className="text-sm font-medium">Add Society</span>
+                        </Button>
+                      }
+                    />
+                    {systemManagement.slice(1).map((tool, index) => (
                       <Button
-                        key={index}
+                        key={index + 1}
                         variant="ghost"
                         className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
+                        onClick={() => {
+                          if (tool.label === 'Manage Admins') {
+                            toast({ title: "Feature Coming Soon", description: "Admin management will be available soon." });
+                          } else if (tool.label === 'System Settings') {
+                            toast({ title: "Feature Coming Soon", description: "System settings will be available soon." });
+                          } else if (tool.label === 'Backup & Restore') {
+                            toast({ title: "Feature Coming Soon", description: "Backup & restore will be available soon." });
+                          }
+                        }}
                         data-testid={`button-${tool.label.toLowerCase().replace(/\s+/g, '-')}`}
                       >
                         <tool.icon className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />
@@ -204,7 +251,7 @@ export default function SuperAdminDashboard() {
           </div>
           
           {/* System Modules */}
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
                 title: "Society Management",
@@ -247,6 +294,17 @@ export default function SuperAdminDashboard() {
                     <p className="text-muted-foreground mb-4">{module.description}</p>
                     <Button 
                       className={`w-full bg-gradient-to-r ${module.color} text-white hover:opacity-90 transition-opacity`}
+                      onClick={() => {
+                        if (module.buttonText === 'Manage Societies') {
+                          setCurrentView('societies');
+                        } else if (module.buttonText === 'View Analytics') {
+                          setCurrentView('analytics');
+                          toast({ title: "Feature Coming Soon", description: "Global analytics will be available soon." });
+                        } else if (module.buttonText === 'Manage Plans') {
+                          setCurrentView('plans');
+                          toast({ title: "Feature Coming Soon", description: "Subscription plans management will be available soon." });
+                        }
+                      }}
                       data-testid={module.testId}
                     >
                       {module.buttonText}
