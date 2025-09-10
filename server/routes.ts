@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupSimpleAuth, isSimpleAuthenticated } from "./simpleAuth";
-import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema } from "@shared/schema";
+import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema, insertPollSchema, insertVoteSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Simple Auth setup
@@ -280,6 +280,191 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching facilities:", error);
       res.status(500).json({ message: "Failed to fetch facilities" });
+    }
+  });
+
+  // Voting routes
+  app.post("/api/polls", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || user.role === 'resident') {
+        return res.status(403).json({ message: "Only admins can create polls" });
+      }
+      
+      const pollData = insertPollSchema.parse({
+        ...req.body,
+        createdById: user.id,
+        societyId: user.societyId,
+      });
+      
+      const poll = await storage.createPoll(pollData);
+      
+      // Create poll options if provided
+      if (req.body.options && Array.isArray(req.body.options)) {
+        for (const [index, optionText] of req.body.options.entries()) {
+          await storage.createPollOption({
+            pollId: poll.id,
+            optionText,
+            orderIndex: index,
+          });
+        }
+      }
+      
+      res.json(poll);
+    } catch (error) {
+      console.error("Error creating poll:", error);
+      res.status(500).json({ message: "Failed to create poll" });
+    }
+  });
+
+  app.get("/api/polls", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (!user || !user.societyId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const polls = await storage.getPollsBySociety(user.societyId);
+      
+      // Add user voting status for each poll
+      for (const poll of polls) {
+        poll.hasVoted = await storage.hasUserVoted(poll.id, user.id);
+        if (poll.hasVoted) {
+          poll.userVote = await storage.getUserVote(poll.id, user.id);
+        }
+      }
+      
+      res.json(polls);
+    } catch (error) {
+      console.error("Error fetching polls:", error);
+      res.status(500).json({ message: "Failed to fetch polls" });
+    }
+  });
+
+  app.get("/api/polls/:pollId", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const { pollId } = req.params;
+      const user = req.user;
+      
+      const poll = await storage.getPoll(pollId);
+      if (!poll) {
+        return res.status(404).json({ message: "Poll not found" });
+      }
+      
+      // Check if user belongs to the same society as the poll
+      if (user.societyId !== poll.societyId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      poll.hasVoted = await storage.hasUserVoted(pollId, user.id);
+      if (poll.hasVoted) {
+        poll.userVote = await storage.getUserVote(pollId, user.id);
+      }
+      
+      res.json(poll);
+    } catch (error) {
+      console.error("Error fetching poll:", error);
+      res.status(500).json({ message: "Failed to fetch poll" });
+    }
+  });
+
+  app.post("/api/polls/:pollId/vote", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const { pollId } = req.params;
+      const { optionId } = req.body;
+      const user = req.user;
+      
+      // Check if poll exists and is active
+      const poll = await storage.getPoll(pollId);
+      if (!poll) {
+        return res.status(404).json({ message: "Poll not found" });
+      }
+      
+      // Check if user belongs to the same society as the poll
+      if (user.societyId !== poll.societyId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      if (poll.status !== "active") {
+        return res.status(400).json({ message: "Poll is not active" });
+      }
+      
+      // Check if poll has ended
+      if (new Date() > new Date(poll.endDate)) {
+        return res.status(400).json({ message: "Poll has ended" });
+      }
+      
+      const voteData = insertVoteSchema.parse({
+        pollId,
+        voterId: user.id,
+        optionId,
+      });
+      
+      const vote = await storage.castVote(voteData);
+      
+      res.json(vote);
+    } catch (error) {
+      console.error("Error casting vote:", error);
+      if (error.message === "User has already voted for this poll") {
+        res.status(400).json({ message: error.message });
+      } else {
+        res.status(500).json({ message: "Failed to cast vote" });
+      }
+    }
+  });
+
+  app.get("/api/polls/:pollId/results", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const { pollId } = req.params;
+      const user = req.user;
+      
+      const poll = await storage.getPoll(pollId);
+      if (!poll) {
+        return res.status(404).json({ message: "Poll not found" });
+      }
+      
+      // Check if user belongs to the same society as the poll
+      if (user.societyId !== poll.societyId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const results = await storage.getPollResults(pollId);
+      res.json({
+        poll,
+        results,
+      });
+    } catch (error) {
+      console.error("Error fetching poll results:", error);
+      res.status(500).json({ message: "Failed to fetch poll results" });
+    }
+  });
+
+  app.put("/api/polls/:pollId/status", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const { pollId } = req.params;
+      const { status } = req.body;
+      const user = req.user;
+      
+      // Only admins can change poll status
+      if (user.role === 'resident') {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+      
+      const poll = await storage.getPoll(pollId);
+      if (!poll) {
+        return res.status(404).json({ message: "Poll not found" });
+      }
+      
+      // Check if user belongs to the same society as the poll
+      if (user.societyId !== poll.societyId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const updatedPoll = await storage.updatePollStatus(pollId, status);
+      res.json(updatedPoll);
+    } catch (error) {
+      console.error("Error updating poll status:", error);
+      res.status(500).json({ message: "Failed to update poll status" });
     }
   });
 
