@@ -191,6 +191,7 @@ export default function SuperAdminDashboard() {
                         variant="ghost"
                         className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
                         onClick={() => {
+                          console.log('Button clicked:', tool.label);
                           if (tool.label === 'Manage Admins') {
                             toast({ title: "Feature Coming Soon", description: "Admin management will be available soon." });
                           } else if (tool.label === 'System Settings') {
@@ -295,6 +296,7 @@ export default function SuperAdminDashboard() {
                     <Button 
                       className={`w-full bg-gradient-to-r ${module.color} text-white hover:opacity-90 transition-opacity`}
                       onClick={() => {
+                        console.log('Module button clicked:', module.buttonText);
                         if (module.buttonText === 'Manage Societies') {
                           setCurrentView('societies');
                         } else if (module.buttonText === 'View Analytics') {
