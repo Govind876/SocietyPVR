@@ -44,7 +44,7 @@ export default function Announcements() {
         ...data,
         expiresAt: data.expiresAt ? new Date(data.expiresAt).toISOString() : undefined,
       };
-      await apiRequest("POST", "/api/announcements", payload);
+      await apiRequest("/api/announcements", "POST", payload);
     },
     onSuccess: () => {
       toast({
