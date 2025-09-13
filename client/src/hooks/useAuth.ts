@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
 export function useAuth() {
   const { data: user, isLoading } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/auth/user", {
+        const res = await fetch(API_BASE_URL + "/api/auth/user", {
           credentials: "include",
         });
         
