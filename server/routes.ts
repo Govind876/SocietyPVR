@@ -63,6 +63,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin assignment routes (Super Admin only)
+  app.get("/api/admins/unassigned", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can access this resource" });
+      }
+      const unassignedAdmins = await storage.getUnassignedAdmins();
+      res.json(unassignedAdmins);
+    } catch (error) {
+      console.error("Error fetching unassigned admins:", error);
+      res.status(500).json({ message: "Failed to fetch unassigned admins" });
+    }
+  });
+
+  app.post("/api/societies/:societyId/assign-admin", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can assign admins" });
+      }
+      
+      const { adminId } = req.body;
+      if (!adminId) {
+        return res.status(400).json({ message: "Admin ID is required" });
+      }
+      
+      await storage.assignAdminToSociety(adminId, req.params.societyId);
+      res.json({ message: "Admin assigned successfully" });
+    } catch (error) {
+      console.error("Error assigning admin:", error);
+      const message = error instanceof Error ? error.message : "Failed to assign admin";
+      
+      // Check if it's a validation error (business rule violation)
+      if (message.includes('already has an admin') || message.includes('Admin user not found') || message.includes('must have admin role')) {
+        return res.status(409).json({ message });
+      }
+      
+      res.status(500).json({ message });
+    }
+  });
+
+  app.delete("/api/societies/:societyId/admin", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can remove admins" });
+      }
+      
+      await storage.removeAdminFromSociety(req.params.societyId);
+      res.json({ message: "Admin removed successfully" });
+    } catch (error) {
+      console.error("Error removing admin:", error);
+      res.status(500).json({ message: "Failed to remove admin" });
+    }
+  });
+
+  app.get("/api/societies/:societyId/admin", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can access this resource" });
+      }
+      
+      const admin = await storage.getAdminBySociety(req.params.societyId);
+      res.json(admin || null);
+    } catch (error) {
+      console.error("Error fetching society admin:", error);
+      res.status(500).json({ message: "Failed to fetch society admin" });
+    }
+  });
+
   // Residents routes
   app.get("/api/societies/:societyId/residents", isSimpleAuthenticated, async (req: any, res) => {
     try {
@@ -403,10 +475,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const vote = await storage.castVote(voteData);
       
       res.json(vote);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error casting vote:", error);
-      if (error?.message === "User has already voted for this poll") {
-        res.status(400).json({ message: error.message });
+      const message = error instanceof Error ? error.message : "Failed to cast vote";
+      
+      if (message === "User has already voted for this poll") {
+        res.status(400).json({ message });
       } else {
         res.status(500).json({ message: "Failed to cast vote" });
       }

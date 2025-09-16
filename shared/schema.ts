@@ -10,6 +10,7 @@ import {
   integer,
   boolean,
   pgEnum,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -49,7 +50,12 @@ export const users = pgTable("users", {
   phoneNumber: varchar("phone_number"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  // Ensure only one super admin in the system
+  uniqueSuperAdmin: uniqueIndex("unique_super_admin").on(table.role).where(sql`${table.role} = 'super_admin'`),
+  // Ensure only one admin per society
+  uniqueAdminPerSociety: uniqueIndex("unique_admin_per_society").on(table.societyId).where(sql`${table.role} = 'admin' AND ${table.societyId} IS NOT NULL`),
+}));
 
 // Societies table
 export const societies = pgTable("societies", {

@@ -50,6 +50,13 @@ export interface IStorage {
   updateUser(userId: string, userData: Partial<UpsertUser>): Promise<User>;
   deleteUser(userId: string): Promise<void>;
   
+  // Admin management operations
+  getSuperAdmin(): Promise<User | undefined>;
+  getAdminBySociety(societyId: string): Promise<User | undefined>;
+  assignAdminToSociety(adminId: string, societyId: string): Promise<void>;
+  removeAdminFromSociety(societyId: string): Promise<void>;
+  getUnassignedAdmins(): Promise<User[]>;
+  
   // Society operations
   createSociety(society: InsertSociety): Promise<Society>;
   getSocieties(): Promise<Society[]>;
@@ -122,6 +129,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    // Get existing user if any
+    const existingUser = userData.id ? await this.getUser(userData.id) : null;
+    
+    // Validate super admin uniqueness (only allow if user is already super admin or no super admin exists)
+    if (userData.role === 'super_admin' && (!existingUser || existingUser.role !== 'super_admin')) {
+      const existingSuperAdmin = await this.getSuperAdmin();
+      if (existingSuperAdmin && existingSuperAdmin.id !== userData.id) {
+        throw new Error('Only one super admin is allowed in the system');
+      }
+    }
+    
+    // Validate admin assignment to society
+    if (userData.role === 'admin' && userData.societyId) {
+      const existingAdmin = await this.getAdminBySociety(userData.societyId);
+      if (existingAdmin && existingAdmin.id !== userData.id) {
+        throw new Error(`Society already has an admin assigned: ${existingAdmin.email}`);
+      }
+    }
+
     const [user] = await db
       .insert(users)
       .values(userData)
@@ -133,6 +159,15 @@ export class DatabaseStorage implements IStorage {
         },
       })
       .returning();
+      
+    // If this is an admin being assigned to a society, update the society's adminId
+    if (user.role === 'admin' && user.societyId) {
+      await this.updateSociety(user.societyId, { adminId: user.id });
+    } else if (existingUser?.role === 'admin' && existingUser?.societyId && user.role !== 'admin') {
+      // Remove admin from society if role changed from admin
+      await this.updateSociety(existingUser.societyId, { adminId: null });
+    }
+    
     return user;
   }
 
@@ -143,6 +178,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(userData: Omit<UpsertUser, 'id'>): Promise<User> {
+    // Check if this is the first user in the system - make them super admin
+    const userCount = await db.select({ count: count() }).from(users);
+    const isFirstUser = userCount[0].count === 0;
+    
+    if (isFirstUser) {
+      userData = { ...userData, role: 'super_admin' };
+    }
+    
+    // Validate super admin uniqueness (unless this is the first user)
+    if (userData.role === 'super_admin' && !isFirstUser) {
+      const existingSuperAdmin = await this.getSuperAdmin();
+      if (existingSuperAdmin) {
+        throw new Error('Only one super admin is allowed in the system');
+      }
+    }
+    
+    // Validate admin assignment to society
+    if (userData.role === 'admin' && userData.societyId) {
+      const existingAdmin = await this.getAdminBySociety(userData.societyId);
+      if (existingAdmin) {
+        throw new Error(`Society already has an admin assigned: ${existingAdmin.email}`);
+      }
+    }
+
     const [user] = await db
       .insert(users)
       .values({
@@ -150,6 +209,12 @@ export class DatabaseStorage implements IStorage {
         id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate simple ID
       })
       .returning();
+    
+    // If this is an admin being assigned to a society, update the society's adminId
+    if (user.role === 'admin' && user.societyId) {
+      await this.updateSociety(user.societyId, { adminId: user.id });
+    }
+    
     return user;
   }
 
@@ -162,16 +227,146 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(userId: string, userData: Partial<UpsertUser>): Promise<User> {
+    const existingUser = await this.getUser(userId);
+    if (!existingUser) {
+      throw new Error('User not found');
+    }
+
+    // Validate super admin changes
+    if (userData.role === 'super_admin' && existingUser.role !== 'super_admin') {
+      const existingSuperAdmin = await this.getSuperAdmin();
+      if (existingSuperAdmin) {
+        throw new Error('Only one super admin is allowed in the system');
+      }
+    }
+    
+    // Validate admin assignment to society
+    if (userData.role === 'admin' && userData.societyId && userData.societyId !== existingUser.societyId) {
+      const existingAdmin = await this.getAdminBySociety(userData.societyId);
+      if (existingAdmin && existingAdmin.id !== userId) {
+        throw new Error(`Society already has an admin assigned: ${existingAdmin.email}`);
+      }
+    }
+
     const [user] = await db
       .update(users)
       .set({ ...userData, updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
+    
+    // Update society admin assignment if role or society changed
+    if (user.role === 'admin' && user.societyId) {
+      await this.updateSociety(user.societyId, { adminId: user.id });
+    } else if (existingUser.role === 'admin' && existingUser.societyId && user.role !== 'admin') {
+      // Remove admin from society if role changed from admin
+      await this.updateSociety(existingUser.societyId, { adminId: null });
+    }
+    
     return user;
   }
 
   async deleteUser(userId: string): Promise<void> {
+    // Get user to check if they are an admin
+    const user = await this.getUser(userId);
+    
+    // If user is admin of a society, clear the society's adminId
+    if (user?.role === 'admin' && user.societyId) {
+      await this.updateSociety(user.societyId, { adminId: null });
+    }
+    
     await db.delete(users).where(eq(users.id, userId));
+  }
+  
+  // Admin management operations
+  async getSuperAdmin(): Promise<User | undefined> {
+    const [superAdmin] = await db
+      .select()
+      .from(users)
+      .where(eq(users.role, 'super_admin'));
+    return superAdmin;
+  }
+  
+  async getAdminBySociety(societyId: string): Promise<User | undefined> {
+    const [admin] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.societyId, societyId), eq(users.role, 'admin')));
+    return admin;
+  }
+  
+  async assignAdminToSociety(adminId: string, societyId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      // Check if society already has an admin
+      const [existingAdmin] = await tx
+        .select()
+        .from(users)
+        .where(and(eq(users.societyId, societyId), eq(users.role, 'admin')));
+      
+      if (existingAdmin && existingAdmin.id !== adminId) {
+        throw new Error(`Society already has an admin assigned: ${existingAdmin.email}`);
+      }
+      
+      // Get the admin user to validate
+      const [admin] = await tx.select().from(users).where(eq(users.id, adminId));
+      if (!admin) {
+        throw new Error('Admin user not found');
+      }
+      
+      if (admin.role !== 'admin') {
+        throw new Error('User must have admin role to be assigned to a society');
+      }
+      
+      // Remove admin from previous society if assigned
+      if (admin.societyId && admin.societyId !== societyId) {
+        await tx
+          .update(societies)
+          .set({ adminId: null, updatedAt: new Date() })
+          .where(eq(societies.id, admin.societyId));
+      }
+      
+      // Update admin's society assignment
+      await tx
+        .update(users)
+        .set({ societyId, updatedAt: new Date() })
+        .where(eq(users.id, adminId));
+      
+      // Update society's admin assignment
+      await tx
+        .update(societies)
+        .set({ adminId, updatedAt: new Date() })
+        .where(eq(societies.id, societyId));
+    });
+  }
+  
+  async removeAdminFromSociety(societyId: string): Promise<void> {
+    await db.transaction(async (tx) => {
+      const [admin] = await tx
+        .select()
+        .from(users)
+        .where(and(eq(users.societyId, societyId), eq(users.role, 'admin')));
+      
+      if (admin) {
+        // Remove society from admin user
+        await tx
+          .update(users)
+          .set({ societyId: null, updatedAt: new Date() })
+          .where(eq(users.id, admin.id));
+        
+        // Remove admin from society
+        await tx
+          .update(societies)
+          .set({ adminId: null, updatedAt: new Date() })
+          .where(eq(societies.id, societyId));
+      }
+    });
+  }
+  
+  async getUnassignedAdmins(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(and(eq(users.role, 'admin'), sql`${users.societyId} IS NULL`))
+      .orderBy(users.firstName, users.lastName);
   }
 
   // Society operations
@@ -392,7 +587,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Get vote counts for each poll
-    for (const [pollId, poll] of pollMap) {
+    for (const [pollId, poll] of Array.from(pollMap.entries())) {
       const [voteCount] = await db
         .select({ count: count() })
         .from(votes)
