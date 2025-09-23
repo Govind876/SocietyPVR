@@ -31,8 +31,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden" });
       }
       
-      const validatedData = insertSocietySchema.parse(req.body);
-      const society = await storage.createSociety(validatedData);
+      // Validate the society data
+      const validationResult = insertSocietySchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: 'Invalid society data',
+          details: validationResult.error.issues
+        });
+      }
+      
+      const society = await storage.createSociety(validationResult.data);
       res.json(society);
     } catch (error) {
       console.error("Error creating society:", error);
