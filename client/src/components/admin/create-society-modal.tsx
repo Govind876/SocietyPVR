@@ -10,12 +10,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle } from "lucide-react";
+import { insertSocietySchema } from "@shared/schema";
+import { z } from "zod";
 
-type CreateSocietyFormData = {
-  name: string;
-  address: string;
-  totalFlats: number;
-};
+const createSocietyFormSchema = insertSocietySchema.extend({
+  name: z.string().min(1, "Society name is required").max(100, "Society name must be less than 100 characters"),
+  address: z.string().min(1, "Address is required").max(500, "Address must be less than 500 characters"),
+  totalFlats: z.number().min(1, "Total flats must be at least 1").max(10000, "Total flats cannot exceed 10,000"),
+});
+
+type CreateSocietyFormData = z.infer<typeof createSocietyFormSchema>;
 
 interface CreateSocietyModalProps {
   trigger?: React.ReactNode;
@@ -27,6 +31,7 @@ export function CreateSocietyModal({ trigger }: CreateSocietyModalProps) {
   const queryClient = useQueryClient();
 
   const form = useForm<CreateSocietyFormData>({
+    resolver: zodResolver(createSocietyFormSchema),
     defaultValues: {
       name: "",
       address: "",
@@ -36,7 +41,7 @@ export function CreateSocietyModal({ trigger }: CreateSocietyModalProps) {
 
   const createSocietyMutation = useMutation({
     mutationFn: async (data: CreateSocietyFormData) => {
-      return await apiRequest("/api/societies", "POST", data);
+      return await apiRequest("POST", "/api/societies", data);
     },
     onSuccess: () => {
       toast({
@@ -128,8 +133,11 @@ export function CreateSocietyModal({ trigger }: CreateSocietyModalProps) {
                     <Input 
                       type="number"
                       placeholder="100"
-                      value={field.value || ""}
-                      onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                      value={field.value?.toString() || ""}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value === "" ? 0 : parseInt(value, 10) || 0);
+                      }}
                       data-testid="input-total-flats"
                     />
                   </FormControl>

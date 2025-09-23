@@ -11,6 +11,9 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { Building, Users, TrendingUp, Server, PlusCircle, ShieldQuestion, Settings, Database } from "lucide-react";
 import { CreateSocietyModal } from "@/components/admin/create-society-modal";
 import { SocietiesManagement } from "@/components/admin/societies-management";
+import { AdminManagementModal } from "@/components/admin/admin-management-modal";
+import { SystemSettingsModal } from "@/components/admin/system-settings-modal";
+import { BackupRestoreModal } from "@/components/admin/backup-restore-modal";
 import type { GlobalStats, Society } from "@shared/schema";
 
 export default function SuperAdminDashboard() {
@@ -185,27 +188,42 @@ export default function SuperAdminDashboard() {
                         </Button>
                       }
                     />
-                    {systemManagement.slice(1).map((tool, index) => (
-                      <Button
-                        key={index + 1}
-                        variant="ghost"
-                        className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
-                        onClick={() => {
-                          console.log('Button clicked:', tool.label);
-                          if (tool.label === 'Manage Admins') {
-                            toast({ title: "Feature Coming Soon", description: "Admin management will be available soon." });
-                          } else if (tool.label === 'System Settings') {
-                            toast({ title: "Feature Coming Soon", description: "System settings will be available soon." });
-                          } else if (tool.label === 'Backup & Restore') {
-                            toast({ title: "Feature Coming Soon", description: "Backup & restore will be available soon." });
-                          }
-                        }}
-                        data-testid={`button-${tool.label.toLowerCase().replace(/\s+/g, '-')}`}
-                      >
-                        <tool.icon className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />
-                        <span className="text-sm font-medium">{tool.label}</span>
-                      </Button>
-                    ))}
+                    <AdminManagementModal 
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
+                          data-testid="button-manage-admins"
+                        >
+                          <ShieldQuestion className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />
+                          <span className="text-sm font-medium">Manage Admins</span>
+                        </Button>
+                      }
+                    />
+                    <SystemSettingsModal 
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
+                          data-testid="button-system-settings"
+                        >
+                          <Settings className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />
+                          <span className="text-sm font-medium">System Settings</span>
+                        </Button>
+                      }
+                    />
+                    <BackupRestoreModal 
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
+                          data-testid="button-backup-restore"
+                        >
+                          <Database className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />
+                          <span className="text-sm font-medium">Backup & Restore</span>
+                        </Button>
+                      }
+                    />
                   </div>
                 </CardContent>
               </Card>

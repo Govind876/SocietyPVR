@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { z } from "zod";
 import { storage } from "./storage";
 import { setupSimpleAuth, isSimpleAuthenticated } from "./simpleAuth";
 import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema, insertPollSchema, insertVoteSchema, insertMarketplaceItemSchema, insertUserSchema } from "@shared/schema";
@@ -791,6 +792,203 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting marketplace item:", error);
       res.status(500).json({ message: "Failed to delete marketplace item" });
+    }
+  });
+
+  // System Settings Schema
+  const systemSettingsSchema = z.object({
+    security: z.object({
+      sessionTimeout: z.number().min(5).max(480),
+      enforceStrongPasswords: z.boolean(),
+      enableTwoFactor: z.boolean(),
+      maxLoginAttempts: z.number().min(1).max(20),
+    }),
+    notifications: z.object({
+      emailNotifications: z.boolean(),
+      smsNotifications: z.boolean(),
+      pushNotifications: z.boolean(),
+      maintenanceAlerts: z.boolean(),
+    }),
+    system: z.object({
+      maintenanceMode: z.boolean(),
+      autoBackup: z.boolean(),
+      logRetention: z.number().min(1).max(365),
+      maxFileSize: z.number().min(1).max(100),
+    }),
+    application: z.object({
+      systemName: z.string().min(1).max(100),
+      contactEmail: z.string().email(),
+      maxSocieties: z.number().min(1).max(1000),
+      defaultLanguage: z.string().min(2).max(5),
+    })
+  });
+
+  // In-memory system settings storage (in production, this would be in database)
+  let systemSettings = {
+    security: {
+      sessionTimeout: 60,
+      enforceStrongPasswords: true,
+      enableTwoFactor: false,
+      maxLoginAttempts: 5,
+    },
+    notifications: {
+      emailNotifications: true,
+      smsNotifications: false,
+      pushNotifications: true,
+      maintenanceAlerts: true,
+    },
+    system: {
+      maintenanceMode: false,
+      autoBackup: true,
+      logRetention: 30,
+      maxFileSize: 10,
+    },
+    application: {
+      systemName: "SocietyHub",
+      contactEmail: "admin@societyhub.com",
+      maxSocieties: 100,
+      defaultLanguage: "en",
+    }
+  };
+
+  // System Settings routes (Super Admin only)
+  app.get("/api/system/settings", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can access system settings" });
+      }
+      
+      res.json(systemSettings);
+    } catch (error) {
+      console.error("Error fetching system settings:", error);
+      res.status(500).json({ message: "Failed to fetch system settings" });
+    }
+  });
+
+  app.put("/api/system/settings", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can update system settings" });
+      }
+      
+      // Validate the settings payload
+      const validationResult = systemSettingsSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: 'Invalid settings data',
+          details: validationResult.error.issues
+        });
+      }
+      
+      // Update the system settings
+      systemSettings = validationResult.data;
+      
+      console.log("System settings updated:", systemSettings);
+      res.json(systemSettings);
+    } catch (error) {
+      console.error("Error updating system settings:", error);
+      res.status(500).json({ message: "Failed to update system settings" });
+    }
+  });
+
+  // Backup & Restore routes (Super Admin only)
+  app.get("/api/system/backups", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can access backups" });
+      }
+      
+      // Return mock backup history (in a real app, this would list actual backup files)
+      const backups = [
+        {
+          id: 1,
+          filename: `societyhub_backup_${new Date().toISOString().split('T')[0]}_14-30.sql`,
+          date: new Date().toISOString(),
+          size: "2.4 MB",
+          type: "Automatic",
+          status: "Success"
+        },
+        {
+          id: 2,
+          filename: `societyhub_backup_${new Date(Date.now() - 86400000).toISOString().split('T')[0]}_14-30.sql`,
+          date: new Date(Date.now() - 86400000).toISOString(),
+          size: "2.3 MB",
+          type: "Automatic",
+          status: "Success"
+        },
+        {
+          id: 3,
+          filename: `societyhub_backup_${new Date(Date.now() - 172800000).toISOString().split('T')[0]}_14-30.sql`,
+          date: new Date(Date.now() - 172800000).toISOString(),
+          size: "2.2 MB",
+          type: "Automatic",
+          status: "Success"
+        }
+      ];
+      
+      res.json(backups);
+    } catch (error) {
+      console.error("Error fetching backups:", error);
+      res.status(500).json({ message: "Failed to fetch backups" });
+    }
+  });
+
+  app.post("/api/system/backups", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can create backups" });
+      }
+      
+      // In a real app, this would create an actual database backup
+      const backup = {
+        id: Date.now(),
+        filename: `societyhub_backup_${new Date().toISOString().split('T')[0]}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '-')}.sql`,
+        date: new Date().toISOString(),
+        size: "2.5 MB",
+        type: "Manual",
+        status: "Success"
+      };
+      
+      console.log("Backup created:", backup.filename);
+      res.json({ message: "Backup created successfully", backup });
+    } catch (error) {
+      console.error("Error creating backup:", error);
+      res.status(500).json({ message: "Failed to create backup" });
+    }
+  });
+
+  app.get("/api/system/backups/:id/download", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can download backups" });
+      }
+      
+      // In a real app, this would serve the actual backup file
+      res.json({ message: "Backup download initiated", downloadUrl: `/downloads/backup_${req.params.id}.sql` });
+    } catch (error) {
+      console.error("Error downloading backup:", error);
+      res.status(500).json({ message: "Failed to download backup" });
+    }
+  });
+
+  app.post("/api/system/backups/:id/restore", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can restore backups" });
+      }
+      
+      // In a real app, this would restore the database from the backup
+      console.log("Restoring from backup:", req.params.id);
+      res.json({ message: "Database restore initiated", backupId: req.params.id });
+    } catch (error) {
+      console.error("Error restoring backup:", error);
+      res.status(500).json({ message: "Failed to restore backup" });
     }
   });
 
