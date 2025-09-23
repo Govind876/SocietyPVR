@@ -44,10 +44,9 @@ export function setupSimpleAuth(app: Express) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // For now, we'll skip password hashing and just check if password matches email prefix
+      // Check if password matches the stored password
       // In a real app, you'd use bcrypt.compare(password, user.hashedPassword)
-      const expectedPassword = email.split('@')[0]; // Simple: password = username part of email
-      if (password !== expectedPassword) {
+      if (password !== user.password) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
@@ -78,6 +77,7 @@ export function setupSimpleAuth(app: Express) {
       // Create new user
       const newUser = await storage.createUser({
         email,
+        password,
         firstName,
         lastName,
         role,
