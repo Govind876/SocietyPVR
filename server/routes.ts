@@ -901,6 +901,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // In-memory backup storage and progress tracking
+  let backupsHistory: any[] = [
+    {
+      id: 1,
+      filename: `societyhub_backup_${new Date(Date.now() - 86400000).toISOString().split('T')[0]}_14-30.sql`,
+      date: new Date(Date.now() - 86400000).toISOString(),
+      size: "2.3 MB",
+      type: "Automatic",
+      status: "Success"
+    },
+    {
+      id: 2,
+      filename: `societyhub_backup_${new Date(Date.now() - 172800000).toISOString().split('T')[0]}_14-30.sql`,
+      date: new Date(Date.now() - 172800000).toISOString(),
+      size: "2.2 MB",
+      type: "Automatic",
+      status: "Success"
+    }
+  ];
+  
+  let activeOperations: Map<string, any> = new Map();
+
   // Backup & Restore routes (Super Admin only)
   app.get("/api/system/backups", isSimpleAuthenticated, async (req: any, res) => {
     try {
@@ -909,35 +931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only super admin can access backups" });
       }
       
-      // Return mock backup history (in a real app, this would list actual backup files)
-      const backups = [
-        {
-          id: 1,
-          filename: `societyhub_backup_${new Date().toISOString().split('T')[0]}_14-30.sql`,
-          date: new Date().toISOString(),
-          size: "2.4 MB",
-          type: "Automatic",
-          status: "Success"
-        },
-        {
-          id: 2,
-          filename: `societyhub_backup_${new Date(Date.now() - 86400000).toISOString().split('T')[0]}_14-30.sql`,
-          date: new Date(Date.now() - 86400000).toISOString(),
-          size: "2.3 MB",
-          type: "Automatic",
-          status: "Success"
-        },
-        {
-          id: 3,
-          filename: `societyhub_backup_${new Date(Date.now() - 172800000).toISOString().split('T')[0]}_14-30.sql`,
-          date: new Date(Date.now() - 172800000).toISOString(),
-          size: "2.2 MB",
-          type: "Automatic",
-          status: "Success"
-        }
-      ];
-      
-      res.json(backups);
+      res.json(backupsHistory);
     } catch (error) {
       console.error("Error fetching backups:", error);
       res.status(500).json({ message: "Failed to fetch backups" });
@@ -951,21 +945,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only super admin can create backups" });
       }
       
-      // In a real app, this would create an actual database backup
+      const backupId = Date.now();
+      const filename = `societyhub_backup_${new Date().toISOString().split('T')[0]}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '-')}.sql`;
+      
+      // Create the backup entry
       const backup = {
-        id: Date.now(),
-        filename: `societyhub_backup_${new Date().toISOString().split('T')[0]}_${new Date().toTimeString().split(' ')[0].replace(/:/g, '-')}.sql`,
+        id: backupId,
+        filename,
         date: new Date().toISOString(),
-        size: "2.5 MB",
+        size: "0 MB", // Will be updated when complete
         type: "Manual",
-        status: "Success"
+        status: "In Progress"
       };
       
-      console.log("Backup created:", backup.filename);
-      res.json({ message: "Backup created successfully", backup });
+      // Add to history and start progress tracking
+      backupsHistory.unshift(backup);
+      activeOperations.set(`backup_${backupId}`, { 
+        type: 'backup', 
+        progress: 0, 
+        status: 'running',
+        startTime: Date.now()
+      });
+      
+      // Simulate backup creation with progress
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 20 + 5; // Random progress increments
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(interval);
+          
+          // Mark backup as complete
+          const backupIndex = backupsHistory.findIndex(b => b.id === backupId);
+          if (backupIndex !== -1) {
+            backupsHistory[backupIndex].status = "Success";
+            backupsHistory[backupIndex].size = "2.5 MB";
+          }
+          
+          activeOperations.delete(`backup_${backupId}`);
+        } else {
+          activeOperations.set(`backup_${backupId}`, {
+            type: 'backup',
+            progress: Math.round(progress),
+            status: 'running',
+            startTime: activeOperations.get(`backup_${backupId}`)?.startTime
+          });
+        }
+      }, 500);
+      
+      console.log("Backup creation started:", filename);
+      res.json({ message: "Backup creation started", backup, backupId });
     } catch (error) {
       console.error("Error creating backup:", error);
       res.status(500).json({ message: "Failed to create backup" });
+    }
+  });
+
+  app.get("/api/system/backups/:id/progress", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can check backup progress" });
+      }
+      
+      const operationKey = `backup_${req.params.id}`;
+      const operation = activeOperations.get(operationKey);
+      
+      if (!operation) {
+        return res.status(404).json({ message: "Operation not found or completed" });
+      }
+      
+      res.json(operation);
+    } catch (error) {
+      console.error("Error checking backup progress:", error);
+      res.status(500).json({ message: "Failed to check backup progress" });
     }
   });
 
@@ -976,8 +1029,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only super admin can download backups" });
       }
       
+      const backupId = parseInt(req.params.id);
+      const backup = backupsHistory.find(b => b.id === backupId);
+      
+      if (!backup || backup.status !== "Success") {
+        return res.status(404).json({ message: "Backup not found or not ready for download" });
+      }
+      
       // In a real app, this would serve the actual backup file
-      res.json({ message: "Backup download initiated", downloadUrl: `/downloads/backup_${req.params.id}.sql` });
+      // For now, simulate download initiation
+      console.log("Download initiated for backup:", backup.filename);
+      res.json({ 
+        message: "Backup download initiated", 
+        downloadUrl: `/downloads/${backup.filename}`,
+        filename: backup.filename 
+      });
     } catch (error) {
       console.error("Error downloading backup:", error);
       res.status(500).json({ message: "Failed to download backup" });
@@ -991,12 +1057,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only super admin can restore backups" });
       }
       
-      // In a real app, this would restore the database from the backup
-      console.log("Restoring from backup:", req.params.id);
-      res.json({ message: "Database restore initiated", backupId: req.params.id });
+      const backupId = parseInt(req.params.id);
+      const backup = backupsHistory.find(b => b.id === backupId);
+      
+      if (!backup || backup.status !== "Success") {
+        return res.status(404).json({ message: "Backup not found or not available for restore" });
+      }
+      
+      const restoreOperationKey = `restore_${backupId}_${Date.now()}`;
+      
+      // Start restore operation tracking
+      activeOperations.set(restoreOperationKey, { 
+        type: 'restore', 
+        progress: 0, 
+        status: 'running',
+        backupId,
+        startTime: Date.now()
+      });
+      
+      // Simulate database restore with progress
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 15 + 3; // Slower than backup
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(interval);
+          activeOperations.delete(restoreOperationKey);
+        } else {
+          activeOperations.set(restoreOperationKey, {
+            type: 'restore',
+            progress: Math.round(progress),
+            status: 'running',
+            backupId,
+            startTime: activeOperations.get(restoreOperationKey)?.startTime
+          });
+        }
+      }, 750);
+      
+      console.log("Database restore initiated from backup:", backup.filename);
+      res.json({ 
+        message: "Database restore initiated", 
+        backupId,
+        restoreOperationId: restoreOperationKey,
+        backup 
+      });
     } catch (error) {
       console.error("Error restoring backup:", error);
       res.status(500).json({ message: "Failed to restore backup" });
+    }
+  });
+
+  app.get("/api/system/restore/:operationId/progress", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can check restore progress" });
+      }
+      
+      const operation = activeOperations.get(req.params.operationId);
+      
+      if (!operation) {
+        return res.status(404).json({ message: "Restore operation not found or completed" });
+      }
+      
+      res.json(operation);
+    } catch (error) {
+      console.error("Error checking restore progress:", error);
+      res.status(500).json({ message: "Failed to check restore progress" });
     }
   });
 
