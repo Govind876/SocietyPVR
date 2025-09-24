@@ -323,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             bookingDate: booking.bookingDate?.toISOString() || new Date().toISOString(),
             startTime: booking.startTime,
             endTime: booking.endTime,
-            status: booking.status,
+            status: booking.status || 'pending',
             totalAmount: booking.totalAmount || 0,
             residentName: `${resident.firstName || ''} ${resident.lastName || ''}`.trim(),
             societyName: society.name
