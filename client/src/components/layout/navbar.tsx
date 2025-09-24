@@ -176,7 +176,7 @@ export default function Navbar() {
                   </Button>
                 </>
               )}
-            </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
