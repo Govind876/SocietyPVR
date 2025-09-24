@@ -1,6 +1,17 @@
 # Overview
 
-SocietyHub is a comprehensive society management platform designed to streamline residential community administration. The application serves three distinct user roles: super admins who manage multiple societies, admins who manage individual societies, and residents who interact with their community services. The platform handles resident management, maintenance requests through complaints, facility bookings, announcements, and financial tracking.
+SocietyHub is a comprehensive society management platform designed to streamline residential community administration. The application serves three distinct user roles: super admins who manage multiple societies, admins who manage individual societies, and residents who interact with their community services. The platform handles resident management, maintenance requests through complaints, facility bookings, announcements, financial tracking, voting/polls, and marketplace features.
+
+**Current State**: Fully imported and running in Replit environment with PostgreSQL database configured and schema pushed.
+
+# Recent Changes
+
+- **September 24, 2025**: GitHub project successfully imported to Replit
+  - PostgreSQL database provisioned and schema pushed via Drizzle ORM
+  - Simple authentication system configured (not using Replit Auth)
+  - Frontend and backend properly configured to run on port 5000
+  - Vite build system configured with `allowedHosts: true` for Replit proxy support
+  - Deployment configuration set for autoscale deployment target
 
 # User Preferences
 
@@ -44,11 +55,12 @@ Key relationships include societies containing multiple flats and users, users c
 
 ## Authentication System
 
-Authentication is handled through Replit's OpenID Connect provider:
+Authentication is currently handled through a simple authentication system (not Replit Auth):
 
-- **Session-based Authentication**: Secure session management with PostgreSQL storage
+- **Session-based Authentication**: Secure session management with PostgreSQL storage using connect-pg-simple
 - **Role-based Authorization**: Middleware checks user roles before allowing access to protected routes
-- **User Profile Management**: Integration with Replit user profiles for seamless authentication
+- **Simple Login/Signup**: Email/password authentication with role-based access control
+- **Three User Roles**: super_admin, admin, resident with appropriate permissions
 
 # External Dependencies
 
