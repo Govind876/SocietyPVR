@@ -23,7 +23,12 @@ const complaintSchema = z.object({
 
 type ComplaintFormData = z.infer<typeof complaintSchema>;
 
-export default function ComplaintsForm() {
+interface ComplaintsFormProps {
+  inline?: boolean;
+  onClose?: () => void;
+}
+
+export default function ComplaintsForm({ inline = false, onClose }: ComplaintsFormProps = {}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
@@ -49,6 +54,7 @@ export default function ComplaintsForm() {
       });
       form.reset();
       setIsOpen(false);
+      onClose?.();
       queryClient.invalidateQueries({ queryKey: ["/api/complaints"] });
     },
     onError: (error) => {
@@ -64,7 +70,7 @@ export default function ComplaintsForm() {
     createComplaintMutation.mutate(data);
   };
 
-  if (!isOpen) {
+  if (!isOpen && !inline) {
     return (
       <Button
         onClick={() => setIsOpen(true)}
@@ -77,18 +83,14 @@ export default function ComplaintsForm() {
     );
   }
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-    >
-      <Card className="w-full max-w-md mx-4">
+  const formContent = (
+    <Card className={!inline ? "w-full max-w-md mx-4" : ""}>
+      {!inline && (
         <CardHeader>
           <CardTitle>Submit Complaint</CardTitle>
         </CardHeader>
-        <CardContent>
+      )}
+      <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -177,7 +179,10 @@ export default function ComplaintsForm() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => {
+                    setIsOpen(false);
+                    onClose?.();
+                  }}
                   className="flex-1"
                   data-testid="button-cancel-complaint"
                 >
@@ -196,6 +201,16 @@ export default function ComplaintsForm() {
           </Form>
         </CardContent>
       </Card>
+  );
+
+  return inline ? formContent : (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    >
+      {formContent}
     </motion.div>
   );
 }

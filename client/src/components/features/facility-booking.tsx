@@ -24,14 +24,19 @@ const bookingSchema = z.object({
 
 type BookingFormData = z.infer<typeof bookingSchema>;
 
-export default function FacilityBooking() {
+interface FacilityBookingProps {
+  inline?: boolean;
+  onClose?: () => void;
+}
+
+export default function FacilityBooking({ inline = false, onClose }: FacilityBookingProps = {}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
 
   const { data: facilities } = useQuery<Facility[]>({
     queryKey: ["/api/facilities"],
-    enabled: isOpen,
+    enabled: inline || isOpen,
   });
 
   const form = useForm<BookingFormData>({
@@ -56,6 +61,7 @@ export default function FacilityBooking() {
       });
       form.reset();
       setIsOpen(false);
+      onClose?.();
       queryClient.invalidateQueries({ queryKey: ["/api/facility-bookings"] });
     },
     onError: (error) => {
@@ -71,7 +77,7 @@ export default function FacilityBooking() {
     createBookingMutation.mutate(data);
   };
 
-  if (!isOpen) {
+  if (!isOpen && !inline) {
     return (
       <Button
         onClick={() => setIsOpen(true)}
@@ -84,18 +90,14 @@ export default function FacilityBooking() {
     );
   }
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-    >
-      <Card className="w-full max-w-md mx-4">
+  const formContent = (
+    <Card className={!inline ? "w-full max-w-md mx-4" : ""}>
+      {!inline && (
         <CardHeader>
           <CardTitle>Book Facility</CardTitle>
         </CardHeader>
-        <CardContent>
+      )}
+      <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -201,7 +203,10 @@ export default function FacilityBooking() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => {
+                    setIsOpen(false);
+                    onClose?.();
+                  }}
                   className="flex-1"
                   data-testid="button-cancel-booking"
                 >
@@ -220,6 +225,16 @@ export default function FacilityBooking() {
           </Form>
         </CardContent>
       </Card>
+  );
+
+  return inline ? formContent : (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    >
+      {formContent}
     </motion.div>
   );
 }

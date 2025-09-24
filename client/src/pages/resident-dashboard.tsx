@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -6,7 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Navbar from "@/components/layout/navbar";
+import ComplaintsForm from "@/components/features/complaints-form";
+import FacilityBooking from "@/components/features/facility-booking";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { IndianRupee, AlertCircle, Calendar, Megaphone, CreditCard, UserCog, Vote, ShoppingBag } from "lucide-react";
 import type { SocietyStats, Complaint, Announcement } from "@shared/schema";
@@ -14,6 +17,8 @@ import type { SocietyStats, Complaint, Announcement } from "@shared/schema";
 export default function ResidentDashboard() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
+  const [showComplaintForm, setShowComplaintForm] = useState(false);
+  const [showFacilityBooking, setShowFacilityBooking] = useState(false);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -57,11 +62,36 @@ export default function ResidentDashboard() {
   }
 
   const quickServices = [
-    { icon: AlertCircle, label: "Raise Complaint", color: "from-primary to-accent", href: "/resident" },
-    { icon: Vote, label: "Digital Voting", color: "from-green-400 to-green-600", href: "/voting" },
-    { icon: ShoppingBag, label: "Marketplace", color: "from-orange-400 to-orange-600", href: "/marketplace" },
-    { icon: Calendar, label: "Book Facility", color: "from-secondary to-accent", href: "/resident" },
-    { icon: CreditCard, label: "Pay Dues", color: "from-primary to-secondary", href: "/resident" },
+    { 
+      icon: AlertCircle, 
+      label: "Raise Complaint", 
+      color: "from-primary to-accent", 
+      action: () => setShowComplaintForm(true)
+    },
+    { 
+      icon: Vote, 
+      label: "Digital Voting", 
+      color: "from-green-400 to-green-600", 
+      action: () => window.location.href = "/voting"
+    },
+    { 
+      icon: ShoppingBag, 
+      label: "Marketplace", 
+      color: "from-orange-400 to-orange-600", 
+      action: () => window.location.href = "/marketplace"
+    },
+    { 
+      icon: Calendar, 
+      label: "Book Facility", 
+      color: "from-secondary to-accent", 
+      action: () => setShowFacilityBooking(true)
+    },
+    { 
+      icon: CreditCard, 
+      label: "Pay Dues", 
+      color: "from-primary to-secondary", 
+      action: () => window.location.href = "/resident"
+    },
   ];
 
   return (
@@ -163,7 +193,7 @@ export default function ResidentDashboard() {
                         key={index}
                         variant="ghost"
                         className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
-                        onClick={() => window.location.href = service.href}
+                        onClick={() => service.action()}
                         data-testid={`button-${service.label.toLowerCase().replace(/\s+/g, '-')}`}
                       >
                         <service.icon className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />
@@ -265,6 +295,26 @@ export default function ResidentDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Complaint Form Modal */}
+      <Dialog open={showComplaintForm} onOpenChange={setShowComplaintForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Raise a Complaint</DialogTitle>
+          </DialogHeader>
+          <ComplaintsForm inline={true} onClose={() => setShowComplaintForm(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Facility Booking Modal */}
+      <Dialog open={showFacilityBooking} onOpenChange={setShowFacilityBooking}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Book a Facility</DialogTitle>
+          </DialogHeader>
+          <FacilityBooking inline={true} onClose={() => setShowFacilityBooking(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
