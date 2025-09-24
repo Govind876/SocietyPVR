@@ -4,7 +4,7 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { setupSimpleAuth, isSimpleAuthenticated } from "./simpleAuth";
 import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema, insertPollSchema, insertVoteSchema, insertMarketplaceItemSchema, insertUserSchema } from "@shared/schema";
-import { sendAnnouncementToResidents } from "./emailService";
+import { sendAnnouncementToResidents, sendComplaintNotification, sendBookingNotification, sendVotingNotification } from "./emailService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Simple Auth setup
@@ -205,6 +205,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const complaint = await storage.createComplaint(validatedData);
+      
+      // Send email notification to admins
+      try {
+        const society = await storage.getSociety(user.societyId);
+        if (society) {
+          const admin = await storage.getAdminBySociety(user.societyId);
+          const adminEmails = admin?.email ? [admin.email] : [];
+          
+          if (adminEmails.length > 0) {
+            await sendComplaintNotification(adminEmails, {
+              id: complaint.id,
+              title: complaint.title,
+              description: complaint.description,
+              category: complaint.category || 'General',
+              priority: complaint.priority || 'medium',
+              residentName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+              flatNumber: user.flatNumber || 'N/A',
+              societyName: society.name
+            });
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending complaint notification emails:', emailError);
+        // Don't fail the complaint creation if email fails
+      }
+      
       res.json(complaint);
     } catch (error) {
       console.error("Error creating complaint:", error);
@@ -282,6 +308,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { status } = req.body;
       const booking = await storage.updateBookingStatus(req.params.id, status);
+      
+      // Send email notification to resident about booking status change
+      try {
+        const resident = await storage.getUser(booking.residentId);
+        const facilities = await storage.getFacilitiesBySociety(booking.societyId);
+        const facility = facilities.find(f => f.id === booking.facilityId);
+        const society = await storage.getSociety(booking.societyId);
+        
+        if (resident && resident.email && facility && society) {
+          await sendBookingNotification(resident.email, {
+            id: booking.id,
+            facilityName: facility.name,
+            bookingDate: booking.bookingDate?.toISOString() || new Date().toISOString(),
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            status: booking.status,
+            totalAmount: booking.totalAmount || 0,
+            residentName: `${resident.firstName || ''} ${resident.lastName || ''}`.trim(),
+            societyName: society.name
+          });
+        }
+      } catch (emailError) {
+        console.error('Error sending booking notification email:', emailError);
+        // Don't fail the booking update if email fails
+      }
+      
       res.json(booking);
     } catch (error) {
       console.error("Error updating booking:", error);
@@ -422,6 +474,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
             orderIndex: index,
           });
         }
+      }
+      
+      // Send email notifications to residents about new poll
+      try {
+        const society = await storage.getSociety(user.societyId);
+        if (society) {
+          const residents = await storage.getResidentsBySociety(user.societyId);
+          const residentsWithEmails = residents
+            .filter(resident => resident.email)
+            .map(resident => ({
+              email: resident.email!,
+              firstName: resident.firstName || 'Resident'
+            }));
+          
+          if (residentsWithEmails.length > 0) {
+            await sendVotingNotification(residentsWithEmails, {
+              id: poll.id,
+              title: poll.title,
+              description: poll.description,
+              endDate: poll.endDate.toISOString(),
+              societyName: society.name,
+              createdByName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+              isAnonymous: poll.isAnonymous || false
+            });
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending voting notification emails:', emailError);
+        // Don't fail the poll creation if email fails
       }
       
       res.json(poll);
