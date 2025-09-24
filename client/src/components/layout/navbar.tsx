@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Building, Bell, Menu, ShoppingBag } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Building, Bell, Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated } = useAuth();
@@ -22,7 +23,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-border">
+    <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border dark:bg-background/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <motion.div 
@@ -58,6 +59,8 @@ export default function Navbar() {
                 </Button>
               </div>
               
+              <ThemeToggle className="rounded-lg hover:bg-muted" />
+              
               <div className="hidden md:flex items-center space-x-2">
                 <span className="text-sm text-muted-foreground">Welcome,</span>
                 <span className="text-sm font-medium text-foreground" data-testid="text-user-welcome">
@@ -91,6 +94,7 @@ export default function Navbar() {
             >
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">Features</a>
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">About</a>
+              <ThemeToggle className="rounded-lg hover:bg-muted" />
               <Button 
                 className="bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 transition-opacity"
                 onClick={() => window.location.href = '/api/login'}
@@ -101,17 +105,81 @@ export default function Navbar() {
             </motion.div>
           )}
 
-          {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleMobileMenu}
-            className="md:hidden"
-            data-testid="button-mobile-menu"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+          {/* Mobile menu button and theme toggle */}
+          <div className="flex items-center space-x-2 md:hidden">
+            <ThemeToggle className="rounded-lg hover:bg-muted" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleMobileMenu}
+              data-testid="button-mobile-menu"
+            >
+              {showMobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
+        
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {showMobileMenu && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden bg-background/95 backdrop-blur-md border-t border-border"
+            >
+            <div className="px-4 py-4 space-y-4">
+              {isAuthenticated ? (
+                <>
+                  <div className="flex items-center space-x-3 pb-3 border-b border-border">
+                    <span className="text-sm text-muted-foreground">Welcome,</span>
+                    <span className="text-sm font-medium text-foreground" data-testid="text-user-welcome-mobile">
+                      {user?.firstName || "User"}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    onClick={handleNotifications}
+                    className="w-full justify-start"
+                    data-testid="button-notifications-mobile"
+                  >
+                    <Bell className="h-4 w-4 mr-2" />
+                    Notifications
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={async () => {
+                      try {
+                        await fetch('/api/auth/logout', { method: 'POST' });
+                        window.location.href = '/';
+                      } catch (error) {
+                        console.error('Logout failed:', error);
+                      }
+                    }}
+                    className="w-full justify-start text-muted-foreground hover:text-foreground"
+                    data-testid="button-logout-mobile"
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <a href="#" className="block py-2 text-muted-foreground hover:text-primary transition-colors">Features</a>
+                  <a href="#" className="block py-2 text-muted-foreground hover:text-primary transition-colors">About</a>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 transition-opacity"
+                    onClick={() => window.location.href = '/api/login'}
+                    data-testid="button-get-started-mobile"
+                  >
+                    Get Started
+                  </Button>
+                </>
+              )}
+            </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </nav>
   );
