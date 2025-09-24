@@ -11,11 +11,13 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { Users, AlertTriangle, IndianRupee, Calendar, UserPlus, Megaphone, FileText, TrendingUp, Vote } from "lucide-react";
 import type { SocietyStats, Complaint, Announcement } from "@shared/schema";
 import { AddResidentModal } from "@/components/admin/add-resident-modal";
+import { CreateAnnouncementModal } from "@/components/admin/create-announcement-modal";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
   const [showAddResidentModal, setShowAddResidentModal] = useState(false);
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function AdminDashboard() {
   const quickActions = [
     { icon: UserPlus, label: "Add Resident", color: "from-primary to-accent", action: () => setShowAddResidentModal(true) },
     { icon: Vote, label: "Digital Voting", color: "from-green-400 to-green-600", href: "/voting" },
-    { icon: Megaphone, label: "New Announcement", color: "from-secondary to-accent", href: "/admin" },
+    { icon: Megaphone, label: "New Announcement", color: "from-secondary to-accent", action: () => setShowAnnouncementModal(true) },
     { icon: TrendingUp, label: "View Reports", color: "from-accent to-primary", href: "/admin" },
   ];
 
@@ -277,6 +279,12 @@ export default function AdminDashboard() {
       <AddResidentModal
         isOpen={showAddResidentModal}
         onClose={() => setShowAddResidentModal(false)}
+      />
+
+      {/* Create Announcement Modal */}
+      <CreateAnnouncementModal
+        isOpen={showAnnouncementModal}
+        onClose={() => setShowAnnouncementModal(false)}
       />
     </div>
   );
