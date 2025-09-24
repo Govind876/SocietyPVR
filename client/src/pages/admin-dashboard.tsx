@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { Link, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ import { CreateAnnouncementModal } from "@/components/admin/create-announcement-
 export default function AdminDashboard() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
+  const [location, setLocation] = useLocation();
   const [showAddResidentModal, setShowAddResidentModal] = useState(false);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
 
@@ -28,7 +30,7 @@ export default function AdminDashboard() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        setLocation("/");
       }, 500);
       return;
     }
@@ -162,7 +164,7 @@ export default function AdminDashboard() {
                         key={index}
                         variant="ghost"
                         className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
-                        onClick={() => action.action ? action.action() : window.location.href = action.href}
+                        onClick={() => action.action ? action.action() : action.href && setLocation(action.href)}
                         data-testid={`button-${action.label.toLowerCase().replace(/\s+/g, '-')}`}
                       >
                         <action.icon className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />
@@ -262,7 +264,7 @@ export default function AdminDashboard() {
                     <p className="text-muted-foreground mb-4">{module.description}</p>
                     <Button 
                       className={`w-full bg-gradient-to-r ${module.color} text-white hover:opacity-90 transition-opacity`}
-                      onClick={() => module.href ? window.location.href = module.href : undefined}
+                      onClick={() => module.href ? setLocation(module.href) : undefined}
                       data-testid={module.testId}
                     >
                       {module.buttonText}

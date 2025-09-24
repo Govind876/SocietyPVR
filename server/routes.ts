@@ -4,6 +4,7 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { setupSimpleAuth, isSimpleAuthenticated } from "./simpleAuth";
 import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema, insertPollSchema, insertVoteSchema, insertMarketplaceItemSchema, insertUserSchema } from "@shared/schema";
+import { sendAnnouncementToResidents } from "./emailService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Simple Auth setup
@@ -318,6 +319,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const announcement = await storage.createAnnouncement(validatedData);
+      
+      // Send email notifications to all residents in the society
+      try {
+        const residents = await storage.getResidentsBySociety(user.societyId);
+        const society = await storage.getSociety(user.societyId);
+        
+        if (residents.length > 0 && society) {
+          const emailSuccess = await sendAnnouncementToResidents(
+            residents.map(resident => ({
+              email: resident.email || '',
+              firstName: resident.firstName || '',
+              lastName: resident.lastName || undefined,
+            })),
+            {
+              title: announcement.title,
+              content: announcement.content,
+              isUrgent: announcement.isUrgent || false,
+              societyName: society.name,
+            }
+          );
+          
+          if (emailSuccess) {
+            console.log(`Announcement emails sent to ${residents.length} residents`);
+          } else {
+            console.warn('Failed to send announcement emails, but announcement was created');
+          }
+        }
+      } catch (emailError) {
+        console.error('Error sending announcement emails:', emailError);
+        // Don't fail the announcement creation if email fails
+      }
+      
       res.json(announcement);
     } catch (error) {
       console.error("Error creating announcement:", error);
