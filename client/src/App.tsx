@@ -39,12 +39,6 @@ function Router() {
         <Route path="/" component={Landing} />
       ) : (
         <>
-          <Route path="/" component={() => {
-            if (user?.role === 'super_admin') return <SuperAdminDashboard />;
-            if (user?.role === 'admin') return <AdminDashboard />;
-            if (user?.role === 'resident') return <ResidentDashboard />;
-            return <Landing />; // Fallback if role is not recognized
-          }} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/resident" component={ResidentDashboard} />
           <Route path="/super-admin" component={SuperAdminDashboard} />
@@ -59,6 +53,12 @@ function Router() {
           <Route path="/payment" component={Payment} />
           <Route path="/my-bookings" component={MyBookings} />
           <Route path="/payment-history" component={PaymentHistory} />
+          <Route path="/" component={() => {
+            if (user?.role === 'super_admin') return <SuperAdminDashboard />;
+            if (user?.role === 'admin') return <AdminDashboard />;
+            if (user?.role === 'resident') return <ResidentDashboard />;
+            return <Landing />; // Fallback if role is not recognized
+          }} />
         </>
       )}
     </Switch>
