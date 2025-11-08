@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import type { SocietyStats, Complaint, Announcement } from "@shared/schema";
 export default function ResidentDashboard() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
+  const [, setLocation] = useLocation();
   const [showComplaintForm, setShowComplaintForm] = useState(false);
   const [showFacilityBooking, setShowFacilityBooking] = useState(false);
 
@@ -29,11 +31,11 @@ export default function ResidentDashboard() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        setLocation("/");
       }, 500);
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
+  }, [isAuthenticated, isLoading, toast, setLocation]);
 
   const { data: stats, isLoading: statsLoading } = useQuery<SocietyStats>({
     queryKey: ["/api/dashboard/stats"],
@@ -72,13 +74,13 @@ export default function ResidentDashboard() {
       icon: Vote, 
       label: "Digital Voting", 
       color: "from-green-400 to-green-600", 
-      action: () => window.location.href = "/voting"
+      action: () => setLocation("/voting")
     },
     { 
       icon: ShoppingBag, 
       label: "Marketplace", 
       color: "from-orange-400 to-orange-600", 
-      action: () => window.location.href = "/marketplace"
+      action: () => setLocation("/marketplace")
     },
     { 
       icon: Calendar, 
@@ -90,7 +92,7 @@ export default function ResidentDashboard() {
       icon: CreditCard, 
       label: "Pay Dues", 
       color: "from-primary to-secondary", 
-      action: () => window.location.href = "/resident"
+      action: () => setLocation("/payment")
     },
   ];
 
@@ -249,7 +251,8 @@ export default function ResidentDashboard() {
                 icon: AlertCircle,
                 buttonText: "View Complaints",
                 color: "from-primary to-accent",
-                testId: "button-view-complaints"
+                testId: "button-view-complaints",
+                href: "/resident"
               },
               {
                 title: "My Bookings",
@@ -257,7 +260,8 @@ export default function ResidentDashboard() {
                 icon: Calendar,
                 buttonText: "Manage Bookings",
                 color: "from-secondary to-accent",
-                testId: "button-manage-bookings"
+                testId: "button-manage-bookings",
+                href: "/my-bookings"
               },
               {
                 title: "Payment History",
@@ -265,7 +269,8 @@ export default function ResidentDashboard() {
                 icon: CreditCard,
                 buttonText: "View History",
                 color: "from-accent to-primary",
-                testId: "button-view-history"
+                testId: "button-view-history",
+                href: "/payment-history"
               },
             ].map((module, index) => (
               <motion.div
@@ -284,6 +289,7 @@ export default function ResidentDashboard() {
                     <p className="text-muted-foreground mb-4">{module.description}</p>
                     <Button 
                       className={`w-full bg-gradient-to-r ${module.color} text-white hover:opacity-90 transition-opacity`}
+                      onClick={() => module.href && setLocation(module.href)}
                       data-testid={module.testId}
                     >
                       {module.buttonText}

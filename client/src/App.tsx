@@ -12,6 +12,14 @@ import SuperAdminDashboard from "@/pages/super-admin-dashboard";
 import Voting from "@/pages/voting";
 import Marketplace from "@/pages/marketplace";
 import ManageResidents from "@/pages/manage-residents";
+import Reports from "@/pages/reports";
+import FacilityBookings from "@/pages/facility-bookings";
+import FinancialReports from "@/pages/financial-reports";
+import GlobalAnalytics from "@/pages/global-analytics";
+import SubscriptionPlans from "@/pages/subscription-plans";
+import Payment from "@/pages/payment";
+import MyBookings from "@/pages/my-bookings";
+import PaymentHistory from "@/pages/payment-history";
 import type { User } from "@shared/schema";
 
 function Router() {
@@ -43,6 +51,14 @@ function Router() {
           <Route path="/voting" component={Voting} />
           <Route path="/marketplace" component={Marketplace} />
           <Route path="/manage-residents" component={ManageResidents} />
+          <Route path="/reports" component={Reports} />
+          <Route path="/facility-bookings" component={FacilityBookings} />
+          <Route path="/financial-reports" component={FinancialReports} />
+          <Route path="/global-analytics" component={GlobalAnalytics} />
+          <Route path="/subscription-plans" component={SubscriptionPlans} />
+          <Route path="/payment" component={Payment} />
+          <Route path="/my-bookings" component={MyBookings} />
+          <Route path="/payment-history" component={PaymentHistory} />
         </>
       )}
     </Switch>

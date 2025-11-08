@@ -66,7 +66,7 @@ export default function AdminDashboard() {
     { icon: UserPlus, label: "Add Resident", color: "from-primary to-accent", action: () => setShowAddResidentModal(true) },
     { icon: Vote, label: "Digital Voting", color: "from-green-400 to-green-600", href: "/voting" },
     { icon: Megaphone, label: "New Announcement", color: "from-secondary to-accent", action: () => setShowAnnouncementModal(true) },
-    { icon: TrendingUp, label: "View Reports", color: "from-accent to-primary", href: "/admin" },
+    { icon: TrendingUp, label: "View Reports", color: "from-accent to-primary", href: "/reports" },
   ];
 
   return (
@@ -237,7 +237,8 @@ export default function AdminDashboard() {
                 icon: Calendar,
                 buttonText: "View Bookings",
                 color: "from-secondary to-accent",
-                testId: "button-view-bookings"
+                testId: "button-view-bookings",
+                href: "/facility-bookings"
               },
               {
                 title: "Financial Reports",
@@ -245,7 +246,8 @@ export default function AdminDashboard() {
                 icon: TrendingUp,
                 buttonText: "Generate Reports",
                 color: "from-accent to-primary",
-                testId: "button-generate-reports"
+                testId: "button-generate-reports",
+                href: "/financial-reports"
               },
             ].map((module, index) => (
               <motion.div

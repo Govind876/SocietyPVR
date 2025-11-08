@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ export default function SuperAdminDashboard() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'societies' | 'analytics' | 'plans'>('dashboard');
   const { toast } = useToast();
   const { isAuthenticated, isLoading, user } = useAuth();
+  const [, setLocation] = useLocation();
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -30,11 +32,11 @@ export default function SuperAdminDashboard() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        setLocation("/");
       }, 500);
       return;
     }
-  }, [isAuthenticated, isLoading, toast]);
+  }, [isAuthenticated, isLoading, toast, setLocation]);
 
   const { data: stats, isLoading: statsLoading } = useQuery<GlobalStats>({
     queryKey: ["/api/dashboard/stats"],
@@ -318,11 +320,9 @@ export default function SuperAdminDashboard() {
                         if (module.buttonText === 'Manage Societies') {
                           setCurrentView('societies');
                         } else if (module.buttonText === 'View Analytics') {
-                          setCurrentView('analytics');
-                          toast({ title: "Feature Coming Soon", description: "Global analytics will be available soon." });
+                          setLocation('/global-analytics');
                         } else if (module.buttonText === 'Manage Plans') {
-                          setCurrentView('plans');
-                          toast({ title: "Feature Coming Soon", description: "Subscription plans management will be available soon." });
+                          setLocation('/subscription-plans');
                         }
                       }}
                       data-testid={module.testId}
