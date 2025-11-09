@@ -297,16 +297,6 @@ export class DatabaseStorage implements IStorage {
   
   async assignAdminToSociety(adminId: string, societyId: string): Promise<void> {
     await db.transaction(async (tx) => {
-      // Check if society already has an admin
-      const [existingAdmin] = await tx
-        .select()
-        .from(users)
-        .where(and(eq(users.societyId, societyId), eq(users.role, 'admin')));
-      
-      if (existingAdmin && existingAdmin.id !== adminId) {
-        throw new Error(`Society already has an admin assigned: ${existingAdmin.email}`);
-      }
-      
       // Get the admin user to validate
       const [admin] = await tx.select().from(users).where(eq(users.id, adminId));
       if (!admin) {
@@ -317,7 +307,21 @@ export class DatabaseStorage implements IStorage {
         throw new Error('User must have admin role to be assigned to a society');
       }
       
-      // Remove admin from previous society if assigned
+      // Check if society already has a different admin - if so, remove them first
+      const [existingAdmin] = await tx
+        .select()
+        .from(users)
+        .where(and(eq(users.societyId, societyId), eq(users.role, 'admin')));
+      
+      if (existingAdmin && existingAdmin.id !== adminId) {
+        // Remove the existing admin from this society
+        await tx
+          .update(users)
+          .set({ societyId: null, updatedAt: new Date() })
+          .where(eq(users.id, existingAdmin.id));
+      }
+      
+      // Remove new admin from previous society if assigned to a different one
       if (admin.societyId && admin.societyId !== societyId) {
         await tx
           .update(societies)
