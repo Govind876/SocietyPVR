@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useLocation } from "wouter";
+import { queryClient } from "@/lib/queryClient";
 import { Building, Bell, Menu, X } from "lucide-react";
 
 export default function Navbar() {
@@ -75,8 +76,14 @@ export default function Navbar() {
                 size="sm"
                 onClick={async () => {
                   try {
-                    await fetch('/api/auth/logout', { method: 'POST' });
+                    await fetch('/api/auth/logout', { 
+                      method: 'POST',
+                      credentials: 'include'
+                    });
+                    queryClient.clear();
+                    queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
                     setLocation('/');
+                    window.location.reload();
                   } catch (error) {
                     console.error('Logout failed:', error);
                   }
@@ -153,7 +160,12 @@ export default function Navbar() {
                     variant="ghost"
                     onClick={async () => {
                       try {
-                        await fetch('/api/auth/logout', { method: 'POST' });
+                        await fetch('/api/auth/logout', { 
+                          method: 'POST',
+                          credentials: 'include'
+                        });
+                        queryClient.clear();
+                        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
                         window.location.href = '/';
                       } catch (error) {
                         console.error('Logout failed:', error);
