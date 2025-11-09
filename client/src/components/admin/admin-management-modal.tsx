@@ -11,15 +11,38 @@ import { ShieldQuestion, Users, Building, AlertCircle, CheckCircle, XCircle } fr
 import type { User, Society } from "@shared/schema";
 
 interface AdminManagementModalProps {
-  trigger?: React.ReactNode;
+  trigger?: React.ReactNode | null;
+  societyId?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AdminManagementModal({ trigger }: AdminManagementModalProps) {
-  const [open, setOpen] = useState(false);
+export function AdminManagementModal({ trigger, societyId: initialSocietyId, open: controlledOpen, onOpenChange }: AdminManagementModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  
+  const handleOpenChange = (newOpen: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+  };
   const [selectedAdmin, setSelectedAdmin] = useState<string>("");
-  const [selectedSociety, setSelectedSociety] = useState<string>("");
-  const { toast } = useToast();
+  const [selectedSociety, setSelectedSociety] = useState<string>(initialSocietyId || "");
+  const { toast} = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (open && initialSocietyId) {
+      setSelectedSociety(initialSocietyId);
+    } else if (!open) {
+      setSelectedAdmin("");
+      if (!initialSocietyId) {
+        setSelectedSociety("");
+      }
+    }
+  }, [open, initialSocietyId]);
 
   // Fetch unassigned admins
   const { data: unassignedAdmins = [], isLoading: loadingAdmins } = useQuery<User[]>({
@@ -46,7 +69,11 @@ export function AdminManagementModal({ trigger }: AdminManagementModalProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/admins/unassigned"] });
       queryClient.invalidateQueries({ queryKey: ["/api/societies"] });
       setSelectedAdmin("");
-      setSelectedSociety("");
+      if (initialSocietyId) {
+        setSelectedSociety(initialSocietyId);
+      } else {
+        setSelectedSociety("");
+      }
     },
     onError: (error) => {
       toast({
@@ -99,15 +126,17 @@ export function AdminManagementModal({ trigger }: AdminManagementModalProps) {
   const societiesWithoutAdmins = societies.filter(society => !society.adminId);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button data-testid="button-admin-management-trigger">
-            <ShieldQuestion className="w-4 h-4 mr-2" />
-            Manage Admins
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {trigger !== null && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button data-testid="button-admin-management-trigger">
+              <ShieldQuestion className="w-4 h-4 mr-2" />
+              Manage Admins
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto" data-testid="modal-admin-management">
         <DialogHeader>
           <DialogTitle>Admin Management</DialogTitle>

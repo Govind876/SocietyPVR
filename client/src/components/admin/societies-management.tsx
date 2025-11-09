@@ -6,27 +6,16 @@ import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { CreateSocietyModal } from "./create-society-modal";
+import { EditSocietyModal } from "./edit-society-modal";
+import { AdminManagementModal } from "./admin-management-modal";
 import { Building, Users, MapPin, Search, Plus } from "lucide-react";
 import { format } from "date-fns";
 import type { Society } from "@shared/schema";
 
 export function SocietiesManagement() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [managingSociety, setManagingSociety] = useState<Society | null>(null);
   const { toast } = useToast();
-
-  const handleEditSociety = (societyId: string) => {
-    toast({
-      title: "Edit Society",
-      description: "Society editing feature will be available soon.",
-    });
-  };
-
-  const handleManageSociety = (societyId: string) => {
-    toast({
-      title: "Manage Society",
-      description: "Society management feature will be available soon.",
-    });
-  };
 
   const { data: societies = [], isLoading, error } = useQuery<Society[]>({
     queryKey: ["/api/societies"],
@@ -154,18 +143,22 @@ export function SocietiesManagement() {
                 </div>
 
                 <div className="flex gap-2 pt-2">
+                  <EditSocietyModal 
+                    society={society}
+                    trigger={
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="flex-1"
+                        data-testid={`button-edit-society-${society.id}`}
+                      >
+                        Edit
+                      </Button>
+                    }
+                  />
                   <Button 
-                    variant="outline" 
                     size="sm"
-                    onClick={() => handleEditSociety(society.id)}
-                    className="flex-1"
-                    data-testid={`button-edit-society-${society.id}`}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    size="sm"
-                    onClick={() => handleManageSociety(society.id)}
+                    onClick={() => setManagingSociety(society)}
                     className="flex-1"
                     data-testid={`button-manage-society-${society.id}`}
                   >
@@ -176,6 +169,17 @@ export function SocietiesManagement() {
             </Card>
           ))}
         </div>
+      )}
+
+      {managingSociety && (
+        <AdminManagementModal 
+          trigger={null}
+          societyId={managingSociety.id}
+          open={!!managingSociety}
+          onOpenChange={(open) => {
+            if (!open) setManagingSociety(null);
+          }}
+        />
       )}
     </div>
   );

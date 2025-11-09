@@ -6,6 +6,16 @@ SocietyHub is a comprehensive society management platform designed to streamline
 
 # Recent Changes
 
+- **November 9, 2025**: Fixed critical issues and enhanced society management
+  - Fixed apiRequest function signature and all component calls (url, method, data order)
+  - Added cross-env for cross-platform NODE_ENV support (Windows/Mac/Linux)
+  - Replaced window.history/location with wouter navigation throughout
+  - Fixed "View Complaints" button navigation on resident dashboard
+  - Implemented Edit and Manage buttons for society cards in super admin dashboard
+  - Created EditSocietyModal component for editing society details
+  - Enhanced AdminManagementModal with controlled state and society pre-selection
+  - All features tested and verified working
+
 - **September 24, 2025**: GitHub project successfully imported to Replit
   - PostgreSQL database provisioned and schema pushed via Drizzle ORM
   - Simple authentication system configured (not using Replit Auth)
