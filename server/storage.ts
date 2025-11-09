@@ -52,6 +52,7 @@ export interface IStorage {
   
   // Admin management operations
   getSuperAdmin(): Promise<User | undefined>;
+  getAllAdmins(): Promise<User[]>;
   getAdminBySociety(societyId: string): Promise<User | undefined>;
   assignAdminToSociety(adminId: string, societyId: string): Promise<void>;
   removeAdminFromSociety(societyId: string): Promise<void>;
@@ -361,6 +362,14 @@ export class DatabaseStorage implements IStorage {
     });
   }
   
+  async getAllAdmins(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.role, 'admin'))
+      .orderBy(users.firstName, users.lastName);
+  }
+
   async getUnassignedAdmins(): Promise<User[]> {
     return await db
       .select()

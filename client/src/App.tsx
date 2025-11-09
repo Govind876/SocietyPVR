@@ -9,6 +9,7 @@ import Landing from "@/pages/landing";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ResidentDashboard from "@/pages/resident-dashboard";
 import SuperAdminDashboard from "@/pages/super-admin-dashboard";
+import AdminManagement from "@/pages/admin-management";
 import Voting from "@/pages/voting";
 import Marketplace from "@/pages/marketplace";
 import ManageResidents from "@/pages/manage-residents";
@@ -42,6 +43,7 @@ function Router() {
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/resident" component={ResidentDashboard} />
           <Route path="/super-admin" component={SuperAdminDashboard} />
+          <Route path="/admin-management" component={AdminManagement} />
           <Route path="/voting" component={Voting} />
           <Route path="/marketplace" component={Marketplace} />
           <Route path="/manage-residents" component={ManageResidents} />

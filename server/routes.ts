@@ -74,6 +74,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin assignment routes (Super Admin only)
+  // Admin management routes (Super Admin only)
+  app.get("/api/admins", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can access this resource" });
+      }
+      const admins = await storage.getAllAdmins();
+      // Remove password from response for security
+      const adminsWithoutPassword = admins.map(({ password, ...admin }) => admin);
+      res.json(adminsWithoutPassword);
+    } catch (error) {
+      console.error("Error fetching admins:", error);
+      res.status(500).json({ message: "Failed to fetch admins" });
+    }
+  });
+
+  app.post("/api/admins", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can create admins" });
+      }
+
+      const { email, password, firstName, lastName } = req.body;
+      
+      if (!email || !password || !firstName) {
+        return res.status(400).json({ message: "Email, password, and first name are required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ message: "User with this email already exists" });
+      }
+
+      // Create admin user
+      const adminUser = await storage.createUser({
+        email,
+        password,
+        firstName,
+        lastName: lastName || "",
+        role: 'admin',
+        societyId: null,
+      });
+
+      // Remove password from response for security
+      const { password: _, ...adminWithoutPassword } = adminUser;
+      res.json(adminWithoutPassword);
+    } catch (error) {
+      console.error("Error creating admin:", error);
+      res.status(500).json({ message: "Failed to create admin" });
+    }
+  });
+
+  app.delete("/api/admins/:id", isSimpleAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Only super admin can delete admins" });
+      }
+
+      const adminId = req.params.id;
+      const adminToDelete = await storage.getUser(adminId);
+      
+      if (!adminToDelete) {
+        return res.status(404).json({ message: "Admin not found" });
+      }
+
+      if (adminToDelete.role !== 'admin') {
+        return res.status(400).json({ message: "User is not an admin" });
+      }
+
+      // If admin is assigned to a society, remove the assignment first
+      if (adminToDelete.societyId) {
+        await storage.removeAdminFromSociety(adminToDelete.societyId);
+      }
+
+      await storage.deleteUser(adminId);
+      res.json({ message: "Admin deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting admin:", error);
+      res.status(500).json({ message: "Failed to delete admin" });
+    }
+  });
+
   app.get("/api/admins/unassigned", isSimpleAuthenticated, async (req: any, res) => {
     try {
       const user = req.user;
@@ -81,7 +167,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only super admin can access this resource" });
       }
       const unassignedAdmins = await storage.getUnassignedAdmins();
-      res.json(unassignedAdmins);
+      // Remove password from response for security
+      const adminsWithoutPassword = unassignedAdmins.map(({ password, ...admin }) => admin);
+      res.json(adminsWithoutPassword);
     } catch (error) {
       console.error("Error fetching unassigned admins:", error);
       res.status(500).json({ message: "Failed to fetch unassigned admins" });

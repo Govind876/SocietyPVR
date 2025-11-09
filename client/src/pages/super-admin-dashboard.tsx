@@ -190,18 +190,15 @@ export default function SuperAdminDashboard() {
                         </Button>
                       }
                     />
-                    <AdminManagementModal 
-                      trigger={
-                        <Button
-                          variant="ghost"
-                          className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
-                          data-testid="button-manage-admins"
-                        >
-                          <ShieldQuestion className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />
-                          <span className="text-sm font-medium">Manage Admins</span>
-                        </Button>
-                      }
-                    />
+                    <Button
+                      variant="ghost"
+                      className="h-auto p-4 flex flex-col items-center justify-center hover:bg-primary hover:text-white transition-all group"
+                      onClick={() => setLocation('/admin-management')}
+                      data-testid="button-manage-admins"
+                    >
+                      <ShieldQuestion className="h-6 w-6 mb-2 group-hover:scale-110 transition-transform" />
+                      <span className="text-sm font-medium">Manage Admins</span>
+                    </Button>
                     <SystemSettingsModal 
                       trigger={
                         <Button
