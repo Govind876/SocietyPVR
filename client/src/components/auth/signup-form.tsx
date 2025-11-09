@@ -52,7 +52,7 @@ export default function SignupForm({ onSuccess, onSwitchToLogin }: SignupFormPro
 
   const signupMutation = useMutation({
     mutationFn: async (data: SignupFormData) => {
-      const response = await apiRequest("POST", "/api/auth/signup", data);
+      const response = await apiRequest("/api/auth/signup", "POST", data);
       return await response.json();
     },
     onSuccess: (data) => {

@@ -36,7 +36,7 @@ export function AdminManagementModal({ trigger }: AdminManagementModalProps) {
   // Assign admin mutation
   const assignAdminMutation = useMutation({
     mutationFn: async ({ societyId, adminId }: { societyId: string; adminId: string }) => {
-      return await apiRequest("POST", `/api/societies/${societyId}/assign-admin`, { adminId });
+      return await apiRequest(`/api/societies/${societyId}/assign-admin`, "POST", { adminId });
     },
     onSuccess: () => {
       toast({
@@ -60,7 +60,7 @@ export function AdminManagementModal({ trigger }: AdminManagementModalProps) {
   // Remove admin mutation
   const removeAdminMutation = useMutation({
     mutationFn: async (societyId: string) => {
-      return await apiRequest("DELETE", `/api/societies/${societyId}/admin`, {});
+      return await apiRequest(`/api/societies/${societyId}/admin`, "DELETE");
     },
     onSuccess: () => {
       toast({

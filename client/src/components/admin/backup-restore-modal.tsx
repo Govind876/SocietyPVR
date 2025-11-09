@@ -31,7 +31,7 @@ export function BackupRestoreModal({ trigger }: BackupRestoreModalProps) {
   // Create backup mutation
   const createBackupMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/system/backups", {});
+      return await apiRequest("/api/system/backups", "POST", {});
     },
     onSuccess: () => {
       toast({
@@ -56,7 +56,7 @@ export function BackupRestoreModal({ trigger }: BackupRestoreModalProps) {
   // Restore backup mutation
   const restoreBackupMutation = useMutation({
     mutationFn: async (backupId: number) => {
-      return await apiRequest("POST", `/api/system/backups/${backupId}/restore`, {});
+      return await apiRequest(`/api/system/backups/${backupId}/restore`, "POST", {});
     },
     onSuccess: () => {
       toast({
@@ -80,7 +80,7 @@ export function BackupRestoreModal({ trigger }: BackupRestoreModalProps) {
   // Download backup mutation
   const downloadBackupMutation = useMutation({
     mutationFn: async (backupId: number) => {
-      return await apiRequest("GET", `/api/system/backups/${backupId}/download`, {});
+      return await apiRequest(`/api/system/backups/${backupId}/download`, "GET");
     },
     onSuccess: (data) => {
       toast({

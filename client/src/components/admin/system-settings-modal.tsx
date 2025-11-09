@@ -102,7 +102,7 @@ export function SystemSettingsModal({ trigger }: SystemSettingsModalProps) {
   // Save settings mutation
   const saveSettingsMutation = useMutation({
     mutationFn: async (newSettings: SystemSettingsType) => {
-      return await apiRequest("PUT", "/api/system/settings", newSettings);
+      return await apiRequest("/api/system/settings", "PUT", newSettings);
     },
     onSuccess: () => {
       toast({

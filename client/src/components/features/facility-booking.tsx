@@ -52,7 +52,7 @@ export default function FacilityBooking({ inline = false, onClose }: FacilityBoo
 
   const createBookingMutation = useMutation({
     mutationFn: async (data: BookingFormData) => {
-      await apiRequest("POST", "/api/facility-bookings", data);
+      await apiRequest("/api/facility-bookings", "POST", data);
     },
     onSuccess: () => {
       toast({

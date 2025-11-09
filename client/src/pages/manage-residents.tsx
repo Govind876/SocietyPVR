@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Navbar from "@/components/layout/navbar";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 import { Users, Search, Edit, Trash2, UserPlus, ArrowLeft } from "lucide-react";
 import type { User } from "@shared/schema";
 import { AddResidentModal } from "@/components/admin/add-resident-modal";
@@ -19,6 +20,7 @@ export default function ManageResidents() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -94,7 +96,7 @@ export default function ManageResidents() {
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
-                onClick={() => window.history.back()}
+                onClick={() => setLocation("/admin")}
                 className="flex items-center gap-2"
                 data-testid="button-back"
               >

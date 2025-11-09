@@ -252,7 +252,7 @@ export default function ResidentDashboard() {
                 buttonText: "View Complaints",
                 color: "from-primary to-accent",
                 testId: "button-view-complaints",
-                href: "/resident"
+                href: "/reports"
               },
               {
                 title: "My Bookings",

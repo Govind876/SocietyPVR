@@ -10,8 +10,8 @@ async function throwIfResNotOk(res: Response) {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export async function apiRequest(
-  method: string,
   url: string,
+  method: string,
   data?: unknown | undefined,
 ): Promise<Response> {
   const fullUrl = API_BASE_URL + url;

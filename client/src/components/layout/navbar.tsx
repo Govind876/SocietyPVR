@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useLocation } from "wouter";
 import { Building, Bell, Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const handleNotifications = () => {
@@ -31,7 +33,7 @@ export default function Navbar() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            onClick={() => window.location.href = '/'}
+            onClick={() => setLocation('/')}
           >
             <div className="w-8 h-8 bg-gradient-to-r from-primary to-accent rounded-lg flex items-center justify-center">
               <Building className="h-4 w-4 text-white" />
@@ -74,7 +76,7 @@ export default function Navbar() {
                 onClick={async () => {
                   try {
                     await fetch('/api/auth/logout', { method: 'POST' });
-                    window.location.href = '/';
+                    setLocation('/');
                   } catch (error) {
                     console.error('Logout failed:', error);
                   }

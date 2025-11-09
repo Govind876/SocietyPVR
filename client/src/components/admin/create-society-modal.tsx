@@ -41,7 +41,7 @@ export function CreateSocietyModal({ trigger }: CreateSocietyModalProps) {
 
   const createSocietyMutation = useMutation({
     mutationFn: async (data: CreateSocietyFormData) => {
-      return await apiRequest("POST", "/api/societies", data);
+      return await apiRequest("/api/societies", "POST", data);
     },
     onSuccess: () => {
       toast({

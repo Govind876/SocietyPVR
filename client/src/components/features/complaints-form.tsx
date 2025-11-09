@@ -45,7 +45,7 @@ export default function ComplaintsForm({ inline = false, onClose }: ComplaintsFo
 
   const createComplaintMutation = useMutation({
     mutationFn: async (data: ComplaintFormData) => {
-      await apiRequest("POST", "/api/complaints", data);
+      await apiRequest("/api/complaints", "POST", data);
     },
     onSuccess: () => {
       toast({
