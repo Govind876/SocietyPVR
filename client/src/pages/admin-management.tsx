@@ -106,6 +106,7 @@ export default function AdminManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/societies"] });
       setSelectedAdmin("");
       setSelectedSociety("");
+      setAdminToAssign(null);
       setShowAssignModal(false);
     },
     onError: (error) => {
