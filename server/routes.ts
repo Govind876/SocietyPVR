@@ -192,14 +192,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Admin ID is required" });
       }
       
+      // Check if society already has an admin to provide better feedback
+      const existingAdmin = await storage.getAdminBySociety(req.params.societyId);
+      const isReassignment = existingAdmin && existingAdmin.id !== adminId;
+      
       await storage.assignAdminToSociety(adminId, req.params.societyId);
-      res.json({ message: "Admin assigned successfully" });
+      
+      const message = isReassignment 
+        ? "Admin reassigned successfully" 
+        : "Admin assigned successfully";
+      
+      res.json({ message, isReassignment });
     } catch (error) {
       console.error("Error assigning admin:", error);
       const message = error instanceof Error ? error.message : "Failed to assign admin";
       
       // Check if it's a validation error (business rule violation)
-      if (message.includes('already has an admin') || message.includes('Admin user not found') || message.includes('must have admin role')) {
+      if (message.includes('Admin user not found') || message.includes('must have admin role')) {
         return res.status(409).json({ message });
       }
       
