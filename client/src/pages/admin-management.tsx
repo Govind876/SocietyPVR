@@ -39,6 +39,7 @@ export default function AdminManagement() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<string>("");
   const [selectedSociety, setSelectedSociety] = useState<string>("");
+  const [adminToAssign, setAdminToAssign] = useState<User | null>(null);
 
   const form = useForm<CreateAdminFormData>({
     resolver: zodResolver(createAdminSchema),
@@ -173,6 +174,13 @@ export default function AdminManagement() {
       return;
     }
     assignAdminMutation.mutate({ societyId: selectedSociety, adminId: selectedAdmin });
+  };
+
+  const handleOpenAssignModalForAdmin = (admin: User) => {
+    setAdminToAssign(admin);
+    setSelectedAdmin(admin.id);
+    setSelectedSociety(admin.societyId || "");
+    setShowAssignModal(true);
   };
 
   const handleRemoveAdmin = (admin: User) => {
@@ -346,6 +354,16 @@ export default function AdminManagement() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleOpenAssignModalForAdmin(admin)}
+                                    className="text-primary hover:text-primary"
+                                    data-testid={`button-assign-society-${admin.id}`}
+                                  >
+                                    <Building className="h-3 w-3 mr-1" />
+                                    {admin.societyId ? "Change Society" : "Assign Society"}
+                                  </Button>
                                   {admin.societyId && (
                                     <Button
                                       variant="outline"
@@ -505,12 +523,23 @@ export default function AdminManagement() {
       </Dialog>
 
       {/* Assign/Reassign Admin Modal */}
-      <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
+      <Dialog open={showAssignModal} onOpenChange={(open) => {
+        setShowAssignModal(open);
+        if (!open) {
+          setAdminToAssign(null);
+          setSelectedAdmin("");
+          setSelectedSociety("");
+        }
+      }}>
         <DialogContent data-testid="modal-assign-admin">
           <DialogHeader>
-            <DialogTitle>Assign or Reassign Admin to Society</DialogTitle>
+            <DialogTitle>
+              {adminToAssign ? `Assign Society for ${adminToAssign.firstName} ${adminToAssign.lastName}` : "Assign or Reassign Admin to Society"}
+            </DialogTitle>
             <DialogDescription>
-              Assign an admin to manage a society. You can also reassign a different admin to a society that already has one.
+              {adminToAssign 
+                ? `Select which society ${adminToAssign.firstName} should manage` 
+                : "Assign an admin to manage a society. You can also reassign a different admin to a society that already has one."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -526,29 +555,46 @@ export default function AdminManagement() {
               </div>
             ) : (
               <>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Select Admin</label>
-                  <Select value={selectedAdmin} onValueChange={setSelectedAdmin}>
-                    <SelectTrigger data-testid="select-admin-for-assignment">
-                      <SelectValue placeholder="Choose an admin..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {admins.map((admin) => {
-                        const assignedSociety = societies.find(s => s.id === admin.societyId);
-                        return (
-                          <SelectItem key={admin.id} value={admin.id} data-testid={`admin-assignment-option-${admin.id}`}>
-                            {admin.firstName} {admin.lastName} ({admin.email})
-                            {assignedSociety && (
-                              <span className="text-muted-foreground text-xs ml-2">
-                                - Currently: {assignedSociety.name}
-                              </span>
-                            )}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!adminToAssign && (
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Select Admin</label>
+                    <Select value={selectedAdmin} onValueChange={setSelectedAdmin}>
+                      <SelectTrigger data-testid="select-admin-for-assignment">
+                        <SelectValue placeholder="Choose an admin..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {admins.map((admin) => {
+                          const assignedSociety = societies.find(s => s.id === admin.societyId);
+                          return (
+                            <SelectItem key={admin.id} value={admin.id} data-testid={`admin-assignment-option-${admin.id}`}>
+                              {admin.firstName} {admin.lastName} ({admin.email})
+                              {assignedSociety && (
+                                <span className="text-muted-foreground text-xs ml-2">
+                                  - Currently: {assignedSociety.name}
+                                </span>
+                              )}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {adminToAssign && (
+                  <div className="bg-muted/50 rounded-md p-3">
+                    <p className="text-sm font-medium mb-1">Admin</p>
+                    <p className="text-sm text-muted-foreground">
+                      {adminToAssign.firstName} {adminToAssign.lastName} ({adminToAssign.email})
+                    </p>
+                    {adminToAssign.societyId && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Currently assigned to: {societies.find(s => s.id === adminToAssign.societyId)?.name || "Unknown"}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
                 <div>
                   <label className="text-sm font-medium mb-2 block">Select Society</label>
                   <Select value={selectedSociety} onValueChange={setSelectedSociety}>
@@ -586,6 +632,7 @@ export default function AdminManagement() {
                     variant="outline"
                     onClick={() => {
                       setShowAssignModal(false);
+                      setAdminToAssign(null);
                       setSelectedAdmin("");
                       setSelectedSociety("");
                     }}
