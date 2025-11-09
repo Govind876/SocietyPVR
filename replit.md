@@ -6,6 +6,15 @@ SocietyHub is a comprehensive society management platform designed to streamline
 
 # Recent Changes
 
+- **November 9, 2025** (Latest): Implemented comprehensive admin management system with bcrypt security
+  - Migrated entire authentication system from plaintext to bcrypt password hashing
+  - Implemented dual-mode login that supports legacy passwords and auto-rehashes them
+  - Created complete admin management API (create, list, delete, assign, unassign admins)
+  - Built comprehensive /admin-management page for super admins with full CRUD operations
+  - Added security: all passwords hashed with bcrypt (12 salt rounds), never returned in responses
+  - Removed passwords from all API responses and session data
+  - All admin management features tested and verified working with proper authorization
+  
 - **November 9, 2025**: Fixed critical issues and enhanced society management
   - Fixed apiRequest function signature and all component calls (url, method, data order)
   - Added cross-env for cross-platform NODE_ENV support (Windows/Mac/Linux)
