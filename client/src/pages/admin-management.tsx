@@ -92,10 +92,13 @@ export default function AdminManagement() {
     mutationFn: async ({ societyId, adminId }: { societyId: string; adminId: string }) => {
       return await apiRequest(`/api/societies/${societyId}/assign-admin`, "POST", { adminId });
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      const isReassignment = data?.isReassignment || false;
       toast({
-        title: "Admin Assigned",
-        description: "Admin has been successfully assigned to the society",
+        title: isReassignment ? "Admin Reassigned" : "Admin Assigned",
+        description: isReassignment 
+          ? "Admin has been successfully reassigned to the society" 
+          : "Admin has been successfully assigned to the society",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admins"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admins/unassigned"] });
@@ -192,7 +195,10 @@ export default function AdminManagement() {
     );
   }
 
-  const societiesWithoutAdmins = societies.filter(society => !society.adminId);
+  const selectedSocietyData = societies.find(s => s.id === selectedSociety);
+  const currentAdminForSelectedSociety = selectedSocietyData?.adminId 
+    ? admins.find(a => a.id === selectedSocietyData.adminId) 
+    : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -498,25 +504,25 @@ export default function AdminManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Admin Modal */}
+      {/* Assign/Reassign Admin Modal */}
       <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
         <DialogContent data-testid="modal-assign-admin">
           <DialogHeader>
-            <DialogTitle>Assign Admin to Society</DialogTitle>
+            <DialogTitle>Assign or Reassign Admin to Society</DialogTitle>
             <DialogDescription>
-              Assign an unassigned admin to manage a society
+              Assign an admin to manage a society. You can also reassign a different admin to a society that already has one.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {unassignedAdmins.length === 0 ? (
+            {admins.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 <AlertCircle className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
-                No unassigned admins available. Create a new admin first.
+                No admins available. Create a new admin first.
               </div>
-            ) : societiesWithoutAdmins.length === 0 ? (
+            ) : societies.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
-                <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                All societies have admins assigned
+                <AlertCircle className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
+                No societies available
               </div>
             ) : (
               <>
@@ -527,11 +533,19 @@ export default function AdminManagement() {
                       <SelectValue placeholder="Choose an admin..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {unassignedAdmins.map((admin) => (
-                        <SelectItem key={admin.id} value={admin.id} data-testid={`admin-assignment-option-${admin.id}`}>
-                          {admin.firstName} {admin.lastName} ({admin.email})
-                        </SelectItem>
-                      ))}
+                      {admins.map((admin) => {
+                        const assignedSociety = societies.find(s => s.id === admin.societyId);
+                        return (
+                          <SelectItem key={admin.id} value={admin.id} data-testid={`admin-assignment-option-${admin.id}`}>
+                            {admin.firstName} {admin.lastName} ({admin.email})
+                            {assignedSociety && (
+                              <span className="text-muted-foreground text-xs ml-2">
+                                - Currently: {assignedSociety.name}
+                              </span>
+                            )}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -542,19 +556,39 @@ export default function AdminManagement() {
                       <SelectValue placeholder="Choose a society..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {societiesWithoutAdmins.map((society) => (
-                        <SelectItem key={society.id} value={society.id} data-testid={`society-assignment-option-${society.id}`}>
-                          {society.name}
-                        </SelectItem>
-                      ))}
+                      {societies.map((society) => {
+                        const currentAdmin = admins.find(a => a.id === society.adminId);
+                        return (
+                          <SelectItem key={society.id} value={society.id} data-testid={`society-assignment-option-${society.id}`}>
+                            {society.name}
+                            {currentAdmin && (
+                              <span className="text-muted-foreground text-xs ml-2">
+                                - Admin: {currentAdmin.firstName} {currentAdmin.lastName}
+                              </span>
+                            )}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
+                {currentAdminForSelectedSociety && selectedAdmin && currentAdminForSelectedSociety.id !== selectedAdmin && (
+                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      <AlertCircle className="h-4 w-4 inline mr-1" />
+                      This will reassign the society. Current admin {currentAdminForSelectedSociety.firstName} {currentAdminForSelectedSociety.lastName} will be unassigned.
+                    </p>
+                  </div>
+                )}
                 <div className="flex gap-3 pt-4">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setShowAssignModal(false)}
+                    onClick={() => {
+                      setShowAssignModal(false);
+                      setSelectedAdmin("");
+                      setSelectedSociety("");
+                    }}
                     className="flex-1"
                     data-testid="button-cancel-assign"
                   >
@@ -566,7 +600,7 @@ export default function AdminManagement() {
                     className="flex-1 bg-gradient-to-r from-secondary to-accent text-white"
                     data-testid="button-submit-assign"
                   >
-                    {assignAdminMutation.isPending ? "Assigning..." : "Assign Admin"}
+                    {assignAdminMutation.isPending ? "Processing..." : (currentAdminForSelectedSociety && selectedAdmin && currentAdminForSelectedSociety.id !== selectedAdmin ? "Reassign Admin" : "Assign Admin")}
                   </Button>
                 </div>
               </>
