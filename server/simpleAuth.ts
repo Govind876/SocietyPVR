@@ -1,8 +1,8 @@
 import type { Express, RequestHandler } from "express";
 import session from "express-session";
+import bcrypt from "bcrypt";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
-// Simple authentication without bcrypt for now
 
 export function getSimpleSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
@@ -44,15 +44,34 @@ export function setupSimpleAuth(app: Express) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Check if password matches the stored password
-      // In a real app, you'd use bcrypt.compare(password, user.hashedPassword)
-      if (password !== user.password) {
+      // Dual-mode authentication: support both hashed (new) and plaintext (legacy) passwords
+      let passwordMatches = false;
+      let needsRehash = false;
+
+      if (user.password.startsWith('$2')) {
+        // Password is hashed, use bcrypt compare
+        passwordMatches = await bcrypt.compare(password, user.password);
+      } else {
+        // Legacy plaintext password
+        passwordMatches = password === user.password;
+        needsRehash = passwordMatches; // If it matches, we should rehash it
+      }
+
+      if (!passwordMatches) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Set user in session
-      (req.session as any).user = user;
-      res.json({ user, message: "Login successful" });
+      // If user logged in with plaintext password, rehash it immediately
+      if (needsRehash) {
+        const hashedPassword = await bcrypt.hash(password, 12);
+        await storage.updateUser(user.id, { password: hashedPassword });
+        user.password = hashedPassword;
+      }
+
+      // Set user in session (remove password before storing in session)
+      const { password: _, ...userWithoutPassword } = user;
+      (req.session as any).user = userWithoutPassword;
+      res.json({ user: userWithoutPassword, message: "Login successful" });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
@@ -74,19 +93,23 @@ export function setupSimpleAuth(app: Express) {
         return res.status(400).json({ message: "User already exists" });
       }
 
+      // Hash password before storing
+      const hashedPassword = await bcrypt.hash(password, 12);
+
       // Create new user
       const newUser = await storage.createUser({
         email,
-        password,
+        password: hashedPassword,
         firstName,
         lastName,
         role,
         societyId: role !== 'super_admin' ? societyId : null,
       });
 
-      // Set user in session
-      (req.session as any).user = newUser;
-      res.json({ user: newUser, message: "Signup successful" });
+      // Set user in session (remove password before storing in session)
+      const { password: _, ...userWithoutPassword } = newUser;
+      (req.session as any).user = userWithoutPassword;
+      res.json({ user: userWithoutPassword, message: "Signup successful" });
     } catch (error) {
       console.error("Signup error:", error);
       res.status(500).json({ message: "Signup failed" });

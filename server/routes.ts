@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { setupSimpleAuth, isSimpleAuthenticated } from "./simpleAuth";
 import { insertComplaintSchema, insertFacilityBookingSchema, insertAnnouncementSchema, insertSocietySchema, insertPollSchema, insertVoteSchema, insertMarketplaceItemSchema, insertUserSchema } from "@shared/schema";
@@ -110,10 +111,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: "User with this email already exists" });
       }
 
+      // Hash password before storing
+      const hashedPassword = await bcrypt.hash(password, 12);
+
       // Create admin user
       const adminUser = await storage.createUser({
         email,
-        password,
+        password: hashedPassword,
         firstName,
         lastName: lastName || "",
         role: 'admin',
